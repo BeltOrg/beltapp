@@ -177,6 +177,7 @@ const summaryFile = process.env.SUMMARY_FILE;
 const wsBase = serviceUrl.replace(/^https:/, "wss:");
 const httpBase = `${serviceUrl}/graphql`;
 const expectedBody = `multi-instance smoke ${Date.now()}`;
+const expectedEmail = "smoke@example.com";
 const subscriptionQuery = "subscription { MessageAdded { id author body } }";
 const mutationQuery =
   "mutation($input: NewMessageInput!) { addMessage(newMessageData: $input) { id author body } }";
@@ -240,6 +241,7 @@ const maybePublish = async () => {
           input: {
             author: "smoke",
             body: expectedBody,
+            email: expectedEmail,
           },
         },
       }),

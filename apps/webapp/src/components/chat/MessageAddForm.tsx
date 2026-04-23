@@ -27,18 +27,20 @@ export default function MessageAddForm({
   // Local form state
   const [author, setAuthor] = useState("");
   const [body, setBody] = useState("");
+  const [email, setEmail] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Handle form submit
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!body) return;
+    if (!body || !email) return;
     setSubmitError(null);
     commitAddMessage({
       variables: {
         input: {
           author: author || null,
           body,
+          email,
         },
       },
       updater: (store) => {
@@ -70,6 +72,13 @@ export default function MessageAddForm({
         placeholder="Message"
         value={body}
         onChange={(e) => setBody(e.target.value)}
+        required
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         required
       />
       <button type="submit" disabled={isSubmitDisabled}>

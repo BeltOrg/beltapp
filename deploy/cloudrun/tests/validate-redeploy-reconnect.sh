@@ -149,7 +149,7 @@ done
 echo "Publishing a post-redeploy GraphQL mutation..."
 curl -fsS \
   -H 'content-type: application/json' \
-  --data "{\"query\":\"mutation(\$input: NewMessageInput!) { addMessage(newMessageData: \$input) { id author body } }\",\"variables\":{\"input\":{\"author\":\"smoke\",\"body\":\"${EXPECTED_BODY}\"}}}" \
+  --data "{\"query\":\"mutation(\$input: NewMessageInput!) { addMessage(newMessageData: \$input) { id author body } }\",\"variables\":{\"input\":{\"author\":\"smoke\",\"body\":\"${EXPECTED_BODY}\",\"email\":\"smoke@example.com\"}}}" \
   "${GRAPHQL_URL}" >/dev/null
 
 echo "Waiting for the subscription probe to confirm recovery..."

@@ -37,6 +37,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const uniqueId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const expectedAuthor = "smoke";
 const expectedBody = `post-deploy smoke ${uniqueId}`;
+const expectedEmail = "smoke@example.com";
 const subscriptionQuery = "subscription { MessageAdded { id author body } }";
 const getMessagesQuery = "query { getMessages { id author body } }";
 const addMessageMutation =
@@ -204,6 +205,7 @@ async function waitForSubscriptionDelivery() {
                 input: {
                   author: expectedAuthor,
                   body: expectedBody,
+                  email: expectedEmail,
                 },
               });
 
