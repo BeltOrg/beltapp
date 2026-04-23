@@ -13,6 +13,7 @@ type Mutation {
   removeMessage(id: Float!): Boolean!
 }
 
+"""Manual schema-only probe for library-scope validate testing"""
 input NewMessageInput {
   author: String
   body: String!
