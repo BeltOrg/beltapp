@@ -41,7 +41,7 @@ export class DogEntity {
     enum: DogBehavior,
     enumName: 'dog_behavior',
     array: true,
-    default: () => "'{}'",
+    default: [],
   })
   behaviorTags!: DogBehavior[];
 

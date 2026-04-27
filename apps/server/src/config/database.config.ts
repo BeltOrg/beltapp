@@ -106,22 +106,25 @@ function getBaseDatabaseOptions(options: {
   preferDirectUrl?: boolean;
   synchronize: boolean;
   includeMigrations?: boolean;
+  migrationsRun?: boolean;
 }): DataSourceOptions {
   const baseConfig: DataSourceOptions = {
     type: 'postgres',
     entities: [MessageEntity, UserEntity, DogEntity, OrderEntity, ReviewEntity],
     synchronize: options.synchronize,
+    migrationsRun: options.migrationsRun ?? false,
     ssl: buildSslConfig(),
     migrationsTableName: 'typeorm_migrations',
   };
-  const migrationConfig = options.includeMigrations
-    ? {
-        migrations: [
-          CreateMessageTable20260415190000,
-          CreateBeltTables20260427180000,
-        ],
-      }
-    : {};
+  const migrationConfig =
+    options.includeMigrations || options.migrationsRun
+      ? {
+          migrations: [
+            CreateMessageTable20260415190000,
+            CreateBeltTables20260427180000,
+          ],
+        }
+      : {};
 
   const databaseUrl = getDatabaseUrl(options.preferDirectUrl);
   if (databaseUrl) {
@@ -144,11 +147,18 @@ function getBaseDatabaseOptions(options: {
 }
 
 export function getDatabaseConfig(): TypeOrmModuleOptions {
-  return getBaseDatabaseOptions({
-    synchronize: parseBoolean(
-      process.env.DATABASE_SYNCHRONIZE,
+  const synchronize = parseBoolean(process.env.DATABASE_SYNCHRONIZE, false);
+  const migrationsRun =
+    !synchronize &&
+    parseBoolean(
+      process.env.DATABASE_RUN_MIGRATIONS_ON_START,
       process.env.NODE_ENV !== 'production',
-    ),
+    );
+
+  return getBaseDatabaseOptions({
+    synchronize,
+    includeMigrations: migrationsRun,
+    migrationsRun,
   });
 }
 

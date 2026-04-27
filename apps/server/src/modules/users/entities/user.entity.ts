@@ -20,7 +20,7 @@ export class UserEntity {
     enum: UserRole,
     enumName: 'belt_user_role',
     array: true,
-    default: () => "'{}'",
+    default: [],
   })
   roles!: UserRole[];
 
