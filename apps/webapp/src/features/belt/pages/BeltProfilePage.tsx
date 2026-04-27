@@ -1,6 +1,7 @@
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltProfilePageQuery } from "./__generated__/BeltProfilePageQuery.graphql";
 import { BeltUserSwitcher } from "../components/BeltUserSwitcher";
+import { Button, Surface } from "../../../shared/ui";
 
 type BeltProfilePageProps = {
   onNavigate: (nextPath: string) => void;
@@ -24,28 +25,28 @@ export function BeltProfilePage({ onNavigate }: BeltProfilePageProps) {
   );
 
   return (
-    <section className="belt-panel belt-panel--narrow">
-      <h2>{data.me.phone}</h2>
-      <dl className="belt-detail-list">
+    <Surface framed className="max-w-xl">
+      <h2 className="m-0 text-xl font-semibold">{data.me.phone}</h2>
+      <dl className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
         <div>
-          <dt>Roles</dt>
-          <dd>{data.me.roles.join(", ")}</dd>
+          <dt className="text-xs text-muted-foreground">Roles</dt>
+          <dd className="m-0 font-semibold">{data.me.roles.join(", ")}</dd>
         </div>
         <div>
-          <dt>Rating</dt>
-          <dd>{data.me.rating.toFixed(1)}</dd>
+          <dt className="text-xs text-muted-foreground">Rating</dt>
+          <dd className="m-0 font-semibold">{data.me.rating.toFixed(1)}</dd>
         </div>
         <div>
-          <dt>Verified</dt>
-          <dd>{data.me.isVerified ? "Yes" : "No"}</dd>
+          <dt className="text-xs text-muted-foreground">Verified</dt>
+          <dd className="m-0 font-semibold">
+            {data.me.isVerified ? "Yes" : "No"}
+          </dd>
         </div>
       </dl>
       <BeltUserSwitcher onNavigate={onNavigate} />
-      <div className="belt-action-row">
-        <button type="button" className="belt-button">
-          Logout
-        </button>
+      <div className="flex flex-wrap gap-2">
+        <Button>Logout</Button>
       </div>
-    </section>
+    </Surface>
   );
 }

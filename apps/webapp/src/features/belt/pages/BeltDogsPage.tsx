@@ -1,12 +1,10 @@
+import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltDogsPageQuery } from "./__generated__/BeltDogsPageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
+import { Badge, Button, Card, Surface } from "../../../shared/ui";
 
-type BeltDogsPageProps = {
-  onNavigate: (nextPath: string) => void;
-};
-
-export function BeltDogsPage({ onNavigate }: BeltDogsPageProps) {
+export function BeltDogsPage() {
   const data = useLazyLoadQuery<BeltDogsPageQuery>(
     graphql`
       query BeltDogsPageQuery {
@@ -24,52 +22,44 @@ export function BeltDogsPage({ onNavigate }: BeltDogsPageProps) {
   );
 
   return (
-    <section className="belt-panel">
-      <div className="belt-section-heading">
-        <h2>Dog profiles</h2>
-        <a
-          href="/dogs/new"
-          className="belt-button belt-button--primary"
-          onClick={(event) => {
-            event.preventDefault();
-            onNavigate("/dogs/new");
-          }}
-        >
-          Add dog
-        </a>
+    <Surface>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="m-0 text-xl font-semibold">Dog profiles</h2>
+        <Button asChild variant="primary">
+          <Link to="/dogs/new">Add dog</Link>
+        </Button>
       </div>
       {data.myDogs.length > 0 ? (
-        <ul className="belt-card-grid">
+        <ul className="grid gap-3 p-0 sm:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
           {data.myDogs.map((dog) => (
-            <li key={dog.id} className="belt-card">
-              <div className="belt-card__header">
-                <h3>{dog.name}</h3>
-                <span>{dog.size}</span>
+            <Card key={dog.id}>
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="m-0 text-base font-semibold">{dog.name}</h3>
+                <Badge>{dog.size}</Badge>
               </div>
-              <p>{dog.notes || "No notes"}</p>
-              <div className="belt-tags">
+              <p className="m-0 text-sm text-muted-foreground">
+                {dog.notes || "No notes"}
+              </p>
+              <div className="flex flex-wrap gap-2">
                 {dog.behaviorTags.map((tag) => (
-                  <span key={tag}>{tag}</span>
+                  <Badge key={tag}>{tag}</Badge>
                 ))}
               </div>
-              <a
-                href={`/dogs/${dog.id}`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onNavigate(`/dogs/${dog.id}`);
-                }}
+              <Link
+                className="font-semibold text-primary"
+                to={`/dogs/${dog.id}`}
               >
                 Open profile
-              </a>
-            </li>
+              </Link>
+            </Card>
           ))}
         </ul>
       ) : (
         <BeltEmptyState
           title="No dogs yet"
-          action={{ label: "Add dog", href: "/dogs/new", onNavigate }}
+          action={{ label: "Add dog", href: "/dogs/new" }}
         />
       )}
-    </section>
+    </Surface>
   );
 }

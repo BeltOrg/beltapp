@@ -1,4 +1,5 @@
 import { BeltUserSwitcher } from "../components/BeltUserSwitcher";
+import { Button, Field, Surface, TextInput } from "../../../shared/ui";
 
 type BeltLoginPageProps = {
   onNavigate: (nextPath: string) => void;
@@ -6,22 +7,17 @@ type BeltLoginPageProps = {
 
 export function BeltLoginPage({ onNavigate }: BeltLoginPageProps) {
   return (
-    <section className="belt-panel belt-panel--narrow">
-      <h2>Login</h2>
-      <form className="belt-form">
-        <label className="belt-field">
-          <span>Phone</span>
-          <input type="tel" defaultValue="+3725550001" />
-        </label>
+    <Surface framed className="max-w-xl">
+      <h2 className="m-0 text-xl font-semibold">Login</h2>
+      <form className="grid gap-3">
+        <Field label="Phone">
+          <TextInput type="tel" defaultValue="+3725550001" />
+        </Field>
         <BeltUserSwitcher onNavigate={onNavigate} />
-        <button
-          type="button"
-          className="belt-button belt-button--primary"
-          onClick={() => onNavigate("/home")}
-        >
+        <Button variant="primary" onClick={() => onNavigate("/home")}>
           Continue
-        </button>
+        </Button>
       </form>
-    </section>
+    </Surface>
   );
 }

@@ -5,6 +5,8 @@
 - Do not load specialized docs unless the task touches that area.
 - after completing a task, if you modify any files, give two commit messages in semantic commits style: short and detailed
 - Read `docs/ai/rules/DocEditing.md` only when editing documentation, markdown documents
+- Read `apps/webapp/docs/ai/architecture_conventions.md` when working on
+  `apps/webapp`.
 - if the task user is asking for is big enough and cannot be complited in one run, then create a task file under `tasks` directory with checklist/phases/etc
 - Read `docs/ai/rules/TasksFiles.md` when creating, managing, or modifying
   files under the `tasks` directory.

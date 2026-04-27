@@ -1,53 +1,231 @@
-:root {
-  font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  color-scheme: light;
-  color: #18202f;
-  background-color: #eef3f7;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #1565c0;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #0d47a1;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --radius-ui: var(--radius-ui);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+@layer base {
+  :root {
+    --background: #eef3f7;
+    --foreground: #18202f;
+    --surface: #ffffff;
+    --surface-foreground: #18202f;
+    --muted: #edf3f8;
+    --muted-foreground: #64748b;
+    --primary: #1565c0;
+    --primary-foreground: #ffffff;
+    --border: #c7d2df;
+    --ring: #3b82c4;
+    --success: #dff8ed;
+    --success-foreground: #0f5a47;
+    --warning: #fff3cf;
+    --warning-foreground: #7a4d00;
+    --info: #e2f0ff;
+    --info-foreground: #174f8a;
+    --danger: #fde2e1;
+    --danger-foreground: #842029;
+    --radius-ui: 8px;
+
+    color-scheme: light;
+    color: var(--foreground);
+    background-color: var(--background);
+    font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+    font-synthesis: none;
+    font-weight: 400;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  a {
+    cursor: pointer;
+  }
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #ffffff;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+@layer components {
+  .chat {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-ui);
+    background: var(--surface);
+  }
+
+  .chat h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .chat-status {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-ui);
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .chat-status--retrying {
+    background: var(--warning);
+    color: var(--warning-foreground);
+  }
+
+  .chat-status--disconnected {
+    background: var(--danger);
+    color: var(--danger-foreground);
+  }
+
+  .messages {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .messages li {
+    list-style: none;
+  }
+
+  .chat form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .chat input {
+    min-height: 2.5rem;
+    min-width: min(100%, 14rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-ui);
+    padding: 0.5rem 0.75rem;
+  }
+
+  .chat button {
+    min-height: 2.5rem;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-ui);
+    padding: 0.5rem 0.9rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+  }
+
+  .chat button:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  .chat-form-note {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--warning-foreground);
+    font-size: 0.9rem;
+  }
+
+  .info-page,
+  .not-found {
+    padding: 1.25rem 0;
+  }
+
+  .markdown-content {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3,
+  .markdown-content h4,
+  .markdown-content h5,
+  .markdown-content h6 {
+    margin: 1rem 0 0;
+    line-height: 1.2;
+  }
+
+  .markdown-content p,
+  .markdown-content ul,
+  .markdown-content ol,
+  .markdown-content pre {
+    margin: 0;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    padding-left: 1.5rem;
+  }
+
+  .markdown-content li + li {
+    margin-top: 0.4rem;
+  }
+
+  .markdown-content code {
+    font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+    font-size: 0.92em;
+  }
+
+  .markdown-content p code,
+  .markdown-content li code {
+    padding: 0.15rem 0.35rem;
+    border-radius: 6px;
+    background: var(--muted);
+  }
+
+  .markdown-content pre {
+    overflow-x: auto;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-ui);
+    background: #102033;
+    color: #ffffff;
+  }
+
+  .markdown-footer {
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted-foreground);
+  }
 }

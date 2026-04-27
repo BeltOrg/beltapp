@@ -1,5 +1,6 @@
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltDogDetailPageQuery } from "./__generated__/BeltDogDetailPageQuery.graphql";
+import { Badge, Surface } from "../../../shared/ui";
 
 type BeltDogDetailPageProps = {
   dogId: string;
@@ -23,20 +24,24 @@ export function BeltDogDetailPage({ dogId }: BeltDogDetailPageProps) {
   );
 
   return (
-    <section className="belt-panel">
-      <div className="belt-detail-header">
+    <Surface>
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="belt-eyebrow">Dog profile</p>
-          <h2>{data.dog.name}</h2>
+          <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
+            Dog profile
+          </p>
+          <h2 className="m-0 text-xl font-semibold">{data.dog.name}</h2>
         </div>
-        <span className="belt-status">{data.dog.size}</span>
+        <Badge>{data.dog.size}</Badge>
       </div>
-      <p>{data.dog.notes || "No notes"}</p>
-      <div className="belt-tags">
+      <p className="m-0 text-muted-foreground">
+        {data.dog.notes || "No notes"}
+      </p>
+      <div className="flex flex-wrap gap-2">
         {data.dog.behaviorTags.map((tag) => (
-          <span key={tag}>{tag}</span>
+          <Badge key={tag}>{tag}</Badge>
         ))}
       </div>
-    </section>
+    </Surface>
   );
 }

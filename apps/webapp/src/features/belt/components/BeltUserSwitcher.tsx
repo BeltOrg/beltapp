@@ -3,6 +3,7 @@ import {
   setCurrentMvpUserId,
   useCurrentMvpUser,
 } from "../../../shared/auth/mvp-auth";
+import { Field, SelectInput } from "../../../shared/ui";
 
 type BeltUserSwitcherProps = {
   onNavigate?: (nextPath: string) => void;
@@ -12,9 +13,8 @@ export function BeltUserSwitcher({ onNavigate }: BeltUserSwitcherProps) {
   const currentUser = useCurrentMvpUser();
 
   return (
-    <label className="belt-field">
-      <span>MVP session</span>
-      <select
+    <Field label="MVP session">
+      <SelectInput
         value={currentUser.id}
         onChange={(event) => {
           setCurrentMvpUserId(Number(event.target.value));
@@ -26,7 +26,7 @@ export function BeltUserSwitcher({ onNavigate }: BeltUserSwitcherProps) {
             {user.label} - {user.phone}
           </option>
         ))}
-      </select>
-    </label>
+      </SelectInput>
+    </Field>
   );
 }

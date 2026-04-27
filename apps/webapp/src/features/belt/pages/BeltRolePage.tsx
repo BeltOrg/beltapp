@@ -3,6 +3,7 @@ import {
   setCurrentMvpUserId,
   useCurrentMvpUser,
 } from "../../../shared/auth/mvp-auth";
+import { Surface, cn } from "../../../shared/ui";
 
 type BeltRolePageProps = {
   onNavigate: (nextPath: string) => void;
@@ -12,9 +13,9 @@ export function BeltRolePage({ onNavigate }: BeltRolePageProps) {
   const currentUser = useCurrentMvpUser();
 
   return (
-    <section className="belt-panel">
-      <h2>Role</h2>
-      <div className="belt-card-grid">
+    <Surface>
+      <h2 className="m-0 text-xl font-semibold">Role</h2>
+      <div className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
         {MVP_USERS.map((user) => {
           const isSelected = user.id === currentUser.id;
 
@@ -22,22 +23,23 @@ export function BeltRolePage({ onNavigate }: BeltRolePageProps) {
             <button
               key={user.id}
               type="button"
-              className={
-                isSelected
-                  ? "belt-card belt-card--button belt-card--selected"
-                  : "belt-card belt-card--button"
-              }
+              className={cn(
+                "grid gap-2 rounded-ui border border-border bg-surface p-4 text-left text-foreground transition-colors hover:border-ring hover:bg-muted",
+                isSelected && "border-primary bg-primary/5",
+              )}
               onClick={() => {
                 setCurrentMvpUserId(user.id);
                 onNavigate("/home");
               }}
             >
               <strong>{user.label}</strong>
-              <span>{user.roles.join(", ")}</span>
+              <span className="text-sm text-muted-foreground">
+                {user.roles.join(", ")}
+              </span>
             </button>
           );
         })}
       </div>
-    </section>
+    </Surface>
   );
 }

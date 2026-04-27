@@ -1,133 +1,60 @@
-import type { MouseEvent } from "react";
+import { Link, NavLink, useNavigate } from "react-router";
 import {
   MVP_USERS,
   setCurrentMvpUserId,
   useCurrentMvpUser,
 } from "../shared/auth/mvp-auth";
-
-type NavigationProps = {
-  currentPath: string;
-  onNavigate: (nextPath: string) => void;
-  onNavigateIntent?: (nextPath: string) => void;
-};
+import { cn } from "../shared/ui";
 
 const PRIMARY_LINKS = [
-  { href: "/home", label: "Home" },
-  { href: "/dogs", label: "Dogs" },
-  { href: "/orders/new", label: "New walk" },
-  { href: "/orders/available", label: "Available" },
-  { href: "/profile", label: "Profile" },
+  { to: "/home", label: "Home", end: true },
+  { to: "/dogs", label: "Dogs", end: false },
+  { to: "/orders/new", label: "New walk", end: true },
+  { to: "/orders/available", label: "Available", end: true },
+  { to: "/profile", label: "Profile", end: true },
 ];
 
-function isActivePath(currentPath: string, href: string): boolean {
-  if (href === "/home") {
-    return currentPath === "/" || currentPath === "/home";
-  }
-
-  if (href === "/dogs") {
-    return currentPath === "/dogs" || currentPath.startsWith("/dogs/");
-  }
-
-  if (href === "/orders/available") {
-    return currentPath === href;
-  }
-
-  if (href === "/orders/new") {
-    return currentPath === href;
-  }
-
-  return currentPath === href;
-}
-
-function NavigationLink({
-  href,
-  label,
-  currentPath,
-  onNavigate,
-  onNavigateIntent,
-}: {
-  href: string;
-  label: string;
-  currentPath: string;
-  onNavigate: (nextPath: string) => void;
-  onNavigateIntent?: (nextPath: string) => void;
-}) {
-  const isActive = isActivePath(currentPath, href);
-
-  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(href);
-  }
-
-  function handleIntent() {
-    onNavigateIntent?.(href);
-  }
-
-  return (
-    <a
-      href={href}
-      onClick={handleClick}
-      onMouseEnter={handleIntent}
-      onFocus={handleIntent}
-      className={
-        isActive ? "app-nav__link app-nav__link--active" : "app-nav__link"
-      }
-      aria-current={isActive ? "page" : undefined}
-    >
-      {label}
-    </a>
-  );
-}
-
-export function Navigation({
-  currentPath,
-  onNavigate,
-  onNavigateIntent,
-}: NavigationProps) {
+export function Navigation() {
   const currentUser = useCurrentMvpUser();
+  const navigate = useNavigate();
 
   return (
-    <nav className="app-nav" aria-label="Primary">
-      <a
-        href="/home"
-        className="app-nav__brand"
-        onClick={(event) => {
-          event.preventDefault();
-          onNavigate("/home");
-        }}
+    <nav
+      className="flex flex-col gap-3 py-1 md:flex-row md:items-center md:justify-between"
+      aria-label="Primary"
+    >
+      <Link
+        to="/home"
+        className="text-lg font-bold tracking-normal text-foreground"
       >
         Belt
-      </a>
-      <div className="app-nav__links">
+      </Link>
+      <div className="flex flex-wrap gap-1">
         {PRIMARY_LINKS.map((link) => (
-          <NavigationLink
-            key={link.href}
-            href={link.href}
-            label={link.label}
-            currentPath={currentPath}
-            onNavigate={onNavigate}
-            onNavigateIntent={onNavigateIntent}
-          />
+          <NavLink
+            key={link.to}
+            to={link.to}
+            end={link.end}
+            className={({ isActive }) =>
+              cn(
+                "rounded-ui border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                isActive &&
+                  "border-border bg-surface text-foreground shadow-sm",
+              )
+            }
+          >
+            {link.label}
+          </NavLink>
         ))}
       </div>
-      <label className="app-nav__user">
+      <label className="grid gap-1 text-xs font-semibold text-muted-foreground sm:min-w-40">
         <span>Session</span>
         <select
+          className="rounded-ui border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
           value={currentUser.id}
           onChange={(event) => {
             setCurrentMvpUserId(Number(event.target.value));
-            onNavigate("/home");
+            void navigate("/home");
           }}
         >
           {MVP_USERS.map((user) => (

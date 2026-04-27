@@ -515,6 +515,11 @@ small realtime framework layer:
 - [x] Keep one websocket client for the app; feature modules must not create
       separate GraphQL websocket clients.
 - [x] Replace chat-first home with Belt route structure.
+- [x] Replace the temporary hand-written route matcher with React Router v7.
+- [x] Keep Relay data fetching inside route components for now instead of
+      mixing router loaders with Relay cache ownership.
+- [x] Add Tailwind CSS v4 with semantic theme tokens.
+- [x] Add reusable `src/shared/ui` primitives for common Belt UI.
 - [ ] Add auth-aware routing.
 - [ ] Add role-aware navigation.
 - [x] Update branding from Anonymous Chat to Belt.
@@ -559,7 +564,7 @@ small realtime framework layer:
 - [x] Run `npm --prefix apps/webapp run relay`.
 - [x] Run `npm --prefix apps/webapp run lint`.
 - [x] Run `npm --prefix apps/webapp run build`.
-- [ ] Run Rush build/verify for affected projects.
+- [x] Run Rush build/verify for affected projects.
 - [ ] Keep local devcontainer flow working with Postgres and Redis.
 
 ## Deployment And Operations Updates

@@ -1,15 +1,11 @@
+import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltOrdersAvailablePageQuery } from "./__generated__/BeltOrdersAvailablePageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
+import { Card, Surface } from "../../../shared/ui";
 
-type BeltOrdersAvailablePageProps = {
-  onNavigate: (nextPath: string) => void;
-};
-
-export function BeltOrdersAvailablePage({
-  onNavigate,
-}: BeltOrdersAvailablePageProps) {
+export function BeltOrdersAvailablePage() {
   const data = useLazyLoadQuery<BeltOrdersAvailablePageQuery>(
     graphql`
       query BeltOrdersAvailablePageQuery {
@@ -29,43 +25,42 @@ export function BeltOrdersAvailablePage({
   );
 
   return (
-    <section className="belt-panel">
-      <h2>Available walks</h2>
+    <Surface>
+      <h2 className="m-0 text-xl font-semibold">Available walks</h2>
       {data.availableOrders.length > 0 ? (
-        <ul className="belt-card-grid">
+        <ul className="grid gap-3 p-0 sm:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
           {data.availableOrders.map((order) => (
-            <li key={order.id} className="belt-card">
-              <div className="belt-card__header">
-                <h3>{order.locationAddress}</h3>
+            <Card key={order.id}>
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="m-0 text-base font-semibold">
+                  {order.locationAddress}
+                </h3>
                 <BeltStatusBadge status={order.status} />
               </div>
-              <dl className="belt-inline-facts">
+              <dl className="grid grid-cols-2 gap-3">
                 <div>
-                  <dt>Dog</dt>
-                  <dd>{order.dogId}</dd>
+                  <dt className="text-xs text-muted-foreground">Dog</dt>
+                  <dd className="m-0 font-semibold">{order.dogId}</dd>
                 </div>
                 <div>
-                  <dt>Price</dt>
-                  <dd>
+                  <dt className="text-xs text-muted-foreground">Price</dt>
+                  <dd className="m-0 font-semibold">
                     {order.priceAmount} {order.priceCurrency}
                   </dd>
                 </div>
               </dl>
-              <a
-                href={`/orders/${order.id}`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onNavigate(`/orders/${order.id}`);
-                }}
+              <Link
+                className="font-semibold text-primary"
+                to={`/orders/${order.id}`}
               >
                 Open order
-              </a>
-            </li>
+              </Link>
+            </Card>
           ))}
         </ul>
       ) : (
         <BeltEmptyState title="No available walks" />
       )}
-    </section>
+    </Surface>
   );
 }

@@ -1,189 +1,331 @@
-import {
-  Suspense,
-  lazy,
-  startTransition,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
-import Chat from "../components/chat/Chat";
-import { RouteErrorBoundary } from "../components/RouteErrorBoundary";
-import { BeltDashboardPage } from "../features/belt/pages/BeltDashboardPage";
-import { BeltDogDetailPage } from "../features/belt/pages/BeltDogDetailPage";
-import { BeltDogEditorPage } from "../features/belt/pages/BeltDogEditorPage";
-import { BeltDogsPage } from "../features/belt/pages/BeltDogsPage";
-import { BeltLoginPage } from "../features/belt/pages/BeltLoginPage";
-import { BeltOrderDetailPage } from "../features/belt/pages/BeltOrderDetailPage";
-import { BeltOrderEditorPage } from "../features/belt/pages/BeltOrderEditorPage";
-import { BeltOrdersAvailablePage } from "../features/belt/pages/BeltOrdersAvailablePage";
-import { BeltProfilePage } from "../features/belt/pages/BeltProfilePage";
-import { BeltRolePage } from "../features/belt/pages/BeltRolePage";
+import { Suspense, lazy } from "react";
 import { useCurrentMvpUser } from "../shared/auth/mvp-auth";
+import { Button } from "../shared/ui";
 import { Navigation } from "./AppNavigation";
-import { getRouteTitle, matchRoute, normalizePath } from "./routes";
-import "./App.css";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  RouterProvider,
+  createBrowserRouter,
+  useLocation,
+  useMatches,
+  useNavigate,
+  useParams,
+  useRouteError,
+} from "react-router";
 
 const loadProjectReadmePage = () => import("../components/info/Info");
+const Chat = lazy(() => import("../components/chat/Chat"));
+const BeltDashboardPage = lazy(() =>
+  import("../features/belt/pages/BeltDashboardPage").then((module) => ({
+    default: module.BeltDashboardPage,
+  })),
+);
+const BeltDogDetailPage = lazy(() =>
+  import("../features/belt/pages/BeltDogDetailPage").then((module) => ({
+    default: module.BeltDogDetailPage,
+  })),
+);
+const BeltDogEditorPage = lazy(() =>
+  import("../features/belt/pages/BeltDogEditorPage").then((module) => ({
+    default: module.BeltDogEditorPage,
+  })),
+);
+const BeltDogsPage = lazy(() =>
+  import("../features/belt/pages/BeltDogsPage").then((module) => ({
+    default: module.BeltDogsPage,
+  })),
+);
+const BeltLoginPage = lazy(() =>
+  import("../features/belt/pages/BeltLoginPage").then((module) => ({
+    default: module.BeltLoginPage,
+  })),
+);
+const BeltOrderDetailPage = lazy(() =>
+  import("../features/belt/pages/BeltOrderDetailPage").then((module) => ({
+    default: module.BeltOrderDetailPage,
+  })),
+);
+const BeltOrderEditorPage = lazy(() =>
+  import("../features/belt/pages/BeltOrderEditorPage").then((module) => ({
+    default: module.BeltOrderEditorPage,
+  })),
+);
+const BeltOrdersAvailablePage = lazy(() =>
+  import("../features/belt/pages/BeltOrdersAvailablePage").then((module) => ({
+    default: module.BeltOrdersAvailablePage,
+  })),
+);
+const BeltProfilePage = lazy(() =>
+  import("../features/belt/pages/BeltProfilePage").then((module) => ({
+    default: module.BeltProfilePage,
+  })),
+);
+const BeltRolePage = lazy(() =>
+  import("../features/belt/pages/BeltRolePage").then((module) => ({
+    default: module.BeltRolePage,
+  })),
+);
 const ProjectReadmePage = lazy(loadProjectReadmePage);
 
-function preloadRoute(pathname: string) {
-  if (pathname === "/info") {
-    void loadProjectReadmePage();
+type RouteHandle = {
+  title: string;
+};
+
+function isRouteHandle(handle: unknown): handle is RouteHandle {
+  if (typeof handle !== "object" || handle === null) {
+    return false;
   }
+
+  return typeof (handle as { title?: unknown }).title === "string";
 }
 
-function usePathname() {
-  const [pathname, setPathname] = useState(() =>
-    normalizePath(window.location.pathname),
-  );
+function useRouteTitle(): string {
+  const matches = useMatches();
 
-  useEffect(() => {
-    function syncPathname() {
-      const nextPath = normalizePath(window.location.pathname);
-      preloadRoute(nextPath);
-      startTransition(() => {
-        setPathname(nextPath);
-      });
+  for (let index = matches.length - 1; index >= 0; index -= 1) {
+    const handle = matches[index]?.handle;
+    if (isRouteHandle(handle)) {
+      return handle.title;
     }
-
-    window.addEventListener("popstate", syncPathname);
-
-    return () => {
-      window.removeEventListener("popstate", syncPathname);
-    };
-  }, []);
-
-  function navigate(nextPath: string) {
-    const normalizedNextPath = normalizePath(nextPath);
-    if (normalizedNextPath === pathname) {
-      return;
-    }
-
-    preloadRoute(normalizedNextPath);
-    window.history.pushState({}, "", normalizedNextPath);
-    startTransition(() => {
-      setPathname(normalizedNextPath);
-    });
   }
 
-  return { pathname, navigate };
+  return "Belt";
 }
 
-function RoutePendingState({ pathname }: { pathname: string }) {
-  if (pathname === "/info") {
-    return (
-      <section className="route-pending" role="status" aria-live="polite">
-        <p className="info-page__eyebrow">Loading docs</p>
-        <h1>Preparing the project guide.</h1>
-      </section>
-    );
-  }
+function useAppNavigate(): (nextPath: string) => void {
+  const navigate = useNavigate();
+  return (nextPath: string) => {
+    void navigate(nextPath);
+  };
+}
 
+function RoutePendingState() {
   return (
-    <section className="route-pending" role="status" aria-live="polite">
+    <section
+      className="rounded-ui border border-border bg-surface p-4"
+      role="status"
+      aria-live="polite"
+    >
       <p>Loading...</p>
     </section>
   );
 }
 
-function NotFoundPage({
-  pathname,
-  onNavigate,
-}: {
-  pathname: string;
-  onNavigate: (nextPath: string) => void;
-}) {
+function RouterErrorBoundary() {
+  const error = useRouteError();
+  const message =
+    error instanceof Error ? error.message : "The page could not be loaded.";
+
   return (
-    <section className="not-found">
-      <p className="belt-eyebrow">Page not found</p>
-      <h1>Unknown route: {pathname}</h1>
-      <p>
-        <a
-          href="/home"
-          onClick={(event) => {
-            event.preventDefault();
-            onNavigate("/home");
-          }}
-        >
-          Return home
-        </a>
+    <section className="grid gap-3 rounded-ui border border-danger/40 bg-danger/10 p-4">
+      <p className="text-xs font-bold uppercase text-danger-foreground">
+        Route error
       </p>
+      <h1 className="m-0 text-2xl font-semibold">Something went wrong.</h1>
+      <p className="m-0 max-w-prose text-muted-foreground">{message}</p>
+      <Button asChild>
+        <Link to="/home">Return home</Link>
+      </Button>
     </section>
   );
 }
 
-export default function App() {
-  const { pathname, navigate } = usePathname();
+function AppLayout() {
   const currentUser = useCurrentMvpUser();
-  const route = matchRoute(pathname);
-  let content: ReactNode;
-
-  switch (route.kind) {
-    case "home":
-      content = <BeltDashboardPage onNavigate={navigate} />;
-      break;
-    case "login":
-      content = <BeltLoginPage onNavigate={navigate} />;
-      break;
-    case "role":
-      content = <BeltRolePage onNavigate={navigate} />;
-      break;
-    case "dogs":
-      content = <BeltDogsPage onNavigate={navigate} />;
-      break;
-    case "dog-new":
-      content = <BeltDogEditorPage mode="create" />;
-      break;
-    case "dog-detail":
-      content = <BeltDogDetailPage dogId={route.dogId} />;
-      break;
-    case "order-new":
-      content = <BeltOrderEditorPage />;
-      break;
-    case "orders-available":
-      content = <BeltOrdersAvailablePage onNavigate={navigate} />;
-      break;
-    case "order-detail":
-      content = (
-        <BeltOrderDetailPage orderId={route.orderId} view={route.view} />
-      );
-      break;
-    case "profile":
-      content = <BeltProfilePage onNavigate={navigate} />;
-      break;
-    case "info":
-      content = (
-        <RouteErrorBoundary pathname={pathname}>
-          <Suspense fallback={<RoutePendingState pathname={pathname} />}>
-            <ProjectReadmePage />
-          </Suspense>
-        </RouteErrorBoundary>
-      );
-      break;
-    case "chat-example":
-      content = <Chat />;
-      break;
-    case "not-found":
-      content = (
-        <NotFoundPage pathname={route.pathname} onNavigate={navigate} />
-      );
-      break;
-  }
+  const location = useLocation();
+  const routeTitle = useRouteTitle();
 
   return (
-    <div className="app-shell">
-      <Navigation
-        currentPath={pathname}
-        onNavigate={navigate}
-        onNavigateIntent={preloadRoute}
-      />
-      <main className="app-main" key={`${currentUser.id}:${pathname}`}>
-        <header className="app-route-header">
-          <p className="belt-eyebrow">Belt</p>
-          <h1>{getRouteTitle(route)}</h1>
+    <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6">
+      <Navigation />
+      <main
+        className="grid gap-4"
+        key={`${currentUser.id}:${location.pathname}`}
+      >
+        <header className="grid gap-1">
+          <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
+            Belt
+          </p>
+          <h1 className="m-0 text-3xl font-semibold leading-tight text-foreground">
+            {routeTitle}
+          </h1>
         </header>
-        {content}
+        <Suspense fallback={<RoutePendingState />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
+}
+
+function DashboardRoute() {
+  return <BeltDashboardPage />;
+}
+
+function LoginRoute() {
+  return <BeltLoginPage onNavigate={useAppNavigate()} />;
+}
+
+function RoleRoute() {
+  return <BeltRolePage onNavigate={useAppNavigate()} />;
+}
+
+function DogsRoute() {
+  return <BeltDogsPage />;
+}
+
+function DogDetailRoute() {
+  const { dogId } = useParams();
+  if (!dogId) {
+    return <Navigate to="/dogs" replace />;
+  }
+
+  return <BeltDogDetailPage dogId={dogId} />;
+}
+
+function OrdersAvailableRoute() {
+  return <BeltOrdersAvailablePage />;
+}
+
+function ProfileRoute() {
+  return <BeltProfilePage onNavigate={useAppNavigate()} />;
+}
+
+function OrderDetailRoute({
+  view,
+}: {
+  view?: "waiting" | "active" | "finish";
+}) {
+  const { orderId } = useParams();
+  if (!orderId) {
+    return <Navigate to="/orders/available" replace />;
+  }
+
+  return <BeltOrderDetailPage orderId={orderId} view={view} />;
+}
+
+function InfoRoute() {
+  return (
+    <Suspense fallback={<RoutePendingState />}>
+      <ProjectReadmePage />
+    </Suspense>
+  );
+}
+
+function NotFoundPage() {
+  const location = useLocation();
+
+  return (
+    <section className="grid gap-3">
+      <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
+        Page not found
+      </p>
+      <h2 className="m-0 text-2xl font-semibold">
+        Unknown route: {location.pathname}
+      </h2>
+      <Button asChild>
+        <Link to="/home">Return home</Link>
+      </Button>
+    </section>
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <AppLayout />,
+    errorElement: <RouterErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/home" replace />,
+      },
+      {
+        path: "home",
+        element: <DashboardRoute />,
+        handle: { title: "Home" } satisfies RouteHandle,
+      },
+      {
+        path: "login",
+        element: <LoginRoute />,
+        handle: { title: "Login" } satisfies RouteHandle,
+      },
+      {
+        path: "role",
+        element: <RoleRoute />,
+        handle: { title: "Role" } satisfies RouteHandle,
+      },
+      {
+        path: "dogs",
+        element: <DogsRoute />,
+        handle: { title: "Dogs" } satisfies RouteHandle,
+      },
+      {
+        path: "dogs/new",
+        element: <BeltDogEditorPage mode="create" />,
+        handle: { title: "Add dog" } satisfies RouteHandle,
+      },
+      {
+        path: "dogs/:dogId",
+        element: <DogDetailRoute />,
+        handle: { title: "Dog profile" } satisfies RouteHandle,
+      },
+      {
+        path: "orders/new",
+        element: <BeltOrderEditorPage />,
+        handle: { title: "Create order" } satisfies RouteHandle,
+      },
+      {
+        path: "orders/available",
+        element: <OrdersAvailableRoute />,
+        handle: { title: "Available walks" } satisfies RouteHandle,
+      },
+      {
+        path: "orders/:orderId",
+        element: <OrderDetailRoute />,
+        handle: { title: "Walk order" } satisfies RouteHandle,
+      },
+      {
+        path: "orders/:orderId/waiting",
+        element: <OrderDetailRoute view="waiting" />,
+        handle: { title: "Waiting walk" } satisfies RouteHandle,
+      },
+      {
+        path: "orders/:orderId/active",
+        element: <OrderDetailRoute view="active" />,
+        handle: { title: "Active walk" } satisfies RouteHandle,
+      },
+      {
+        path: "orders/:orderId/finish",
+        element: <OrderDetailRoute view="finish" />,
+        handle: { title: "Finish walk" } satisfies RouteHandle,
+      },
+      {
+        path: "profile",
+        element: <ProfileRoute />,
+        handle: { title: "Profile" } satisfies RouteHandle,
+      },
+      {
+        path: "info",
+        element: <InfoRoute />,
+        handle: { title: "Info" } satisfies RouteHandle,
+      },
+      {
+        path: "chat-example",
+        element: <Chat />,
+        handle: { title: "Chat example" } satisfies RouteHandle,
+      },
+      {
+        path: "*",
+        element: <NotFoundPage />,
+        handle: { title: "Not found" } satisfies RouteHandle,
+      },
+    ],
+  },
+]);
+
+export default function App() {
+  return <RouterProvider router={router} />;
 }
