@@ -24,10 +24,19 @@ Target stack for the first implementation:
 Build the Belt MVP as a web-first service that can later support mobile without
 rewriting backend contracts.
 
-The current anonymous chat application is useful as scaffolding for build,
-deployment, GraphQL, database, and frontend patterns. The chat product itself is
-not part of Belt and should be replaced or moved out of the main user flow as
-the Belt domain lands.
+The current anonymous chat feature is an example for GraphQL subscriptions and
+Relay wiring. It is not a product feature for Belt and should be removed after
+the Belt domain replaces it.
+
+The server app already has the preferred shape for this repository: feature
+modules, resolvers, services, entities, DTOs, mappers, config, migrations, and
+contract generation. Extend that shape for Belt unless implementation work
+reveals a clear reason to improve it.
+
+The webapp has useful Relay and GraphQL setup, but its current structure is
+example-level. Belt work should keep the setup and reorganize the frontend into
+modular feature areas so auth, dogs, orders, reviews, and shared UI do not
+collapse into one flat component folder.
 
 ## Non-Goals For The First Belt Pass
 
@@ -371,8 +380,10 @@ Frontend requirements:
 - [ ] Add modules for users, dogs, orders, reviews, and auth.
 - [ ] Keep database config and migration patterns consistent with
       [apps/server/src/config/database.config.ts](../apps/server/src/config/database.config.ts).
-- [ ] Decide whether the existing chat module is removed, archived, or left as
-      a temporary internal example.
+- [ ] Use the existing server module layout as the implementation template for
+      Belt modules.
+- [ ] Remove the chat module after Belt replaces its subscription example role,
+      unless a short-lived compatibility period is needed during migration.
 
 ### Phase 2: Auth Foundation
 
@@ -427,6 +438,10 @@ Frontend requirements:
 
 ### Phase 1: App Shell Rework
 
+- [ ] Reorganize `apps/webapp/src` into feature-oriented modules before the
+      Belt UI grows too large.
+- [ ] Keep the existing Relay, GraphQL endpoint, subscription, and preload
+      recovery setup while moving product code into the new structure.
 - [ ] Replace chat-first home with Belt route structure.
 - [ ] Add auth-aware routing.
 - [ ] Add role-aware navigation.
@@ -506,6 +521,8 @@ or database model.
 - [ ] Assigned walkers can start and finish walks.
 - [ ] Orders follow the canonical state machine and reject invalid transitions.
 - [ ] Completed orders can be reviewed.
+- [ ] Chat example code is removed from the product path.
+- [ ] Webapp product code is organized into Belt feature modules.
 - [ ] GraphQL contract, Relay artifacts, tests, and smoke checks match the Belt
       domain.
 - [ ] Local dev and deployment workflows remain usable.
