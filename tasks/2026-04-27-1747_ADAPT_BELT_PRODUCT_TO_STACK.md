@@ -392,7 +392,10 @@ solution:
   environments. Redis is important because a reconnect may land on a different
   Cloud Run instance.
 - The webapp centralizes the resilient `graphql-ws` client in
-  [apps/webapp/src/realtime-connection.ts](../apps/webapp/src/realtime-connection.ts).
+  [apps/webapp/src/shared/realtime/realtime-connection.ts](../apps/webapp/src/shared/realtime/realtime-connection.ts).
+  [apps/webapp/src/realtime-connection.ts](../apps/webapp/src/realtime-connection.ts)
+  is kept only as a temporary compatibility re-export for the current chat
+  example.
 - The client is lazy, sends heartbeat pings every 10 seconds, terminates the
   socket if a pong is not received within 5 seconds, retries forever for
   recoverable closes, and uses capped exponential backoff with jitter.
@@ -401,9 +404,9 @@ solution:
 - Browser `online` and `offline` events are exposed through
   `useRealtimeConnectionState`, allowing product UI to show connection state and
   temporarily disable realtime-dependent actions while the stream is recovering.
-- Relay subscriptions are routed through the shared websocket client in
-  [apps/webapp/src/main.tsx](../apps/webapp/src/main.tsx), so individual
-  components should not create their own websocket clients.
+- Relay subscriptions are routed through the shared Relay environment in
+  [apps/webapp/src/shared/relay/environment.ts](../apps/webapp/src/shared/relay/environment.ts),
+  so individual components should not create their own websocket clients.
 - The chat UI in
   [apps/webapp/src/components/chat/Chat.tsx](../apps/webapp/src/components/chat/Chat.tsx)
   demonstrates how a feature consumes `useSubscription`, shows live connection
@@ -503,38 +506,38 @@ small realtime framework layer:
 
 ### Phase 1: App Shell Rework
 
-- [ ] Reorganize `apps/webapp/src` into feature-oriented modules before the
+- [x] Reorganize `apps/webapp/src` into feature-oriented modules before the
       Belt UI grows too large.
-- [ ] Keep the existing Relay, GraphQL endpoint, subscription, and preload
+- [x] Keep the existing Relay, GraphQL endpoint, subscription, and preload
       recovery setup while moving product code into the new structure.
-- [ ] Promote `realtime-connection` into shared webapp infrastructure used by
+- [x] Promote `realtime-connection` into shared webapp infrastructure used by
       all Belt subscription consumers.
-- [ ] Keep one websocket client for the app; feature modules must not create
+- [x] Keep one websocket client for the app; feature modules must not create
       separate GraphQL websocket clients.
-- [ ] Replace chat-first home with Belt route structure.
+- [x] Replace chat-first home with Belt route structure.
 - [ ] Add auth-aware routing.
 - [ ] Add role-aware navigation.
-- [ ] Update branding from Anonymous Chat to Belt.
+- [x] Update branding from Anonymous Chat to Belt.
 
 ### Phase 2: Auth And Profile
 
-- [ ] Build phone login screen.
+- [x] Build phone login screen.
 - [ ] Build verification flow.
-- [ ] Build role selection.
-- [ ] Build profile/logout screen.
+- [x] Build role selection.
+- [x] Build profile/logout screen.
 
 ### Phase 3: Owner Flow
 
-- [ ] Build dog list.
+- [x] Build dog list.
 - [ ] Build add/edit dog.
-- [ ] Build create order.
+- [x] Build create order shell.
 - [ ] Build waiting order view.
 - [ ] Build owner active/completion views.
 
 ### Phase 4: Walker Flow
 
 - [ ] Build availability toggle or walker mode entry.
-- [ ] Build available orders list.
+- [x] Build available orders list.
 - [ ] Build accept order action with `ORDER_ALREADY_TAKEN` handling.
 - [ ] Build active walk actions for start and finish.
 
@@ -554,6 +557,8 @@ small realtime framework layer:
       automatic resubscription without a page reload.
 - [x] Run `npm --prefix apps/server run graphql:schema`.
 - [x] Run `npm --prefix apps/webapp run relay`.
+- [x] Run `npm --prefix apps/webapp run lint`.
+- [x] Run `npm --prefix apps/webapp run build`.
 - [ ] Run Rush build/verify for affected projects.
 - [ ] Keep local devcontainer flow working with Postgres and Redis.
 
@@ -583,7 +588,7 @@ or database model.
 
 ## Completion Criteria
 
-- [ ] Belt replaces Anonymous Chat as the main product flow.
+- [x] Belt replaces Anonymous Chat as the main product flow.
 - [ ] Users can log in, select roles, and access role-appropriate screens.
 - [ ] Owners can manage dogs.
 - [ ] Owners can create and cancel orders.
@@ -593,7 +598,7 @@ or database model.
 - [ ] Orders follow the canonical state machine and reject invalid transitions.
 - [ ] Completed orders can be reviewed.
 - [ ] Chat example code is removed from the product path.
-- [ ] Webapp product code is organized into Belt feature modules.
+- [x] Webapp product code is organized into Belt feature modules.
 - [ ] GraphQL contract, Relay artifacts, tests, and smoke checks match the Belt
       domain.
 - [ ] Local dev and deployment workflows remain usable.
