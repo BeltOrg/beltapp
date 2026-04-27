@@ -2,7 +2,12 @@ import { Logger } from '@nestjs/common';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { CreateMessageTable20260415190000 } from '../database/migrations/20260415190000-CreateMessageTable';
+import { CreateBeltTables20260427180000 } from '../database/migrations/20260427180000-CreateBeltTables';
+import { DogEntity } from '../modules/dogs/entities/dog.entity';
 import { MessageEntity } from '../modules/chat/entities/message.entity';
+import { OrderEntity } from '../modules/orders/entities/order.entity';
+import { ReviewEntity } from '../modules/reviews/entities/review.entity';
+import { UserEntity } from '../modules/users/entities/user.entity';
 import { parseBoolean, parseNumber } from './env.utils';
 import { logStructuredEvent } from '../logging/structured-log';
 
@@ -104,14 +109,17 @@ function getBaseDatabaseOptions(options: {
 }): DataSourceOptions {
   const baseConfig: DataSourceOptions = {
     type: 'postgres',
-    entities: [MessageEntity],
+    entities: [MessageEntity, UserEntity, DogEntity, OrderEntity, ReviewEntity],
     synchronize: options.synchronize,
     ssl: buildSslConfig(),
     migrationsTableName: 'typeorm_migrations',
   };
   const migrationConfig = options.includeMigrations
     ? {
-        migrations: [CreateMessageTable20260415190000],
+        migrations: [
+          CreateMessageTable20260415190000,
+          CreateBeltTables20260427180000,
+        ],
       }
     : {};
 

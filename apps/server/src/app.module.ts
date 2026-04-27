@@ -15,11 +15,13 @@ import type { IncomingMessage } from 'http';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { getEnvFilePaths } from './config/env-paths';
+import { BeltModule } from './modules/belt/belt.module';
 import { ChatModule } from './modules/chat/chat.module';
 import {
   createLoggedDataSource,
   getDatabaseConfig,
 } from './config/database.config';
+import { resolveCurrentUserIdFromHeaders } from './modules/auth/auth-context';
 import {
   isGraphqlSubscriptionLoggingEnabled,
   logStructuredEvent,
@@ -71,6 +73,7 @@ function logSubscriptionEvent(
       envFilePath: getEnvFilePaths(),
       ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
+    BeltModule,
     ChatModule,
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -78,6 +81,15 @@ function logSubscriptionEvent(
       useFactory: (configService: ConfigService) => {
         return {
           path: configService.get<string>('GRAPHQL_PATH') ?? '/graphql',
+          context: ({
+            req,
+          }: {
+            req?: {
+              headers?: Record<string, string | string[] | undefined>;
+            };
+          }) => ({
+            currentUserId: resolveCurrentUserIdFromHeaders(req?.headers),
+          }),
           subscriptions: {
             'graphql-ws': {
               connectionInitWaitTimeout: 15_000,

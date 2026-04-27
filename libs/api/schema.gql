@@ -1,5 +1,57 @@
+input CancelOrderInput {
+  reason: String
+}
+
+input CreateDogInput {
+  behaviorTags: [DogBehavior!]! = []
+  name: String!
+  notes: String
+  size: DogSize!
+}
+
+input CreateOrderInput {
+  dogId: ID!
+  endTime: Date!
+  estimatedDurationMinutes: Int
+  locationAddress: String!
+  locationLat: Float!
+  locationLng: Float!
+  priceAmount: Int!
+  priceCurrency: String! = "EUR"
+  startTime: Date!
+}
+
+input CreateReviewInput {
+  comment: String
+  rating: Int!
+}
+
 """Date custom scalar type"""
 scalar Date
+
+type Dog {
+  behaviorTags: [DogBehavior!]!
+  createdAt: Date!
+  id: ID!
+  name: String!
+  notes: String
+  ownerId: ID!
+  size: DogSize!
+  updatedAt: Date!
+}
+
+enum DogBehavior {
+  AGGRESSIVE
+  FRIENDLY
+  NEEDS_EXPERIENCED_WALKER
+  REACTIVE
+}
+
+enum DogSize {
+  LARGE
+  MEDIUM
+  SMALL
+}
 
 """chat message"""
 type Message {
@@ -9,8 +61,20 @@ type Message {
 }
 
 type Mutation {
+  acceptOrder(id: ID!): Order!
   addMessage(newMessageData: NewMessageInput!): Message!
+  cancelOrder(id: ID!, input: CancelOrderInput): Order!
+  createDog(input: CreateDogInput!): Dog!
+  createOrder(input: CreateOrderInput!): Order!
+  createOrderReview(input: CreateReviewInput!, orderId: ID!): Review!
+  deleteDog(id: ID!): Boolean!
+  finishOrder(id: ID!): Order!
+  logout: Boolean!
+  markOrderPaid(id: ID!): Order!
   removeMessage(id: Float!): Boolean!
+  startOrder(id: ID!): Order!
+  updateDog(id: ID!, input: UpdateDogInput!): Dog!
+  updateMyRoles(input: UpdateMyRolesInput!): User!
 }
 
 input NewMessageInput {
@@ -18,11 +82,86 @@ input NewMessageInput {
   body: String!
 }
 
+type Order {
+  acceptedAt: Date
+  cancelledAt: Date
+  createdAt: Date!
+  dogId: ID!
+  endTime: Date!
+  finishedAt: Date
+  id: ID!
+  locationAddress: String!
+  locationLat: Float!
+  locationLng: Float!
+  ownerId: ID!
+  paidAt: Date
+  priceAmount: Int!
+  priceCurrency: String!
+  startTime: Date!
+  startedAt: Date
+  status: OrderStatus!
+  updatedAt: Date!
+  walkerId: ID
+}
+
+enum OrderStatus {
+  ACCEPTED
+  CANCELLED
+  CREATED
+  FINISHED
+  PAID
+  STARTED
+}
+
 type Query {
+  availableOrders: [Order!]!
+  dog(id: ID!): Dog!
   getMessage(id: String!): Message!
   getMessages: [Message!]!
+  me: User!
+  myDogs: [Dog!]!
+  myOwnerOrders(statuses: [OrderStatus!]): [Order!]!
+  myReviews: [Review!]!
+  myWalkerOrders(statuses: [OrderStatus!]): [Order!]!
+  order(id: ID!): Order!
+}
+
+type Review {
+  comment: String
+  createdAt: Date!
+  id: ID!
+  orderId: ID!
+  rating: Int!
+  revieweeId: ID!
+  reviewerId: ID!
 }
 
 type Subscription {
   MessageAdded: Message!
+}
+
+input UpdateDogInput {
+  behaviorTags: [DogBehavior!]
+  name: String
+  notes: String
+  size: DogSize
+}
+
+input UpdateMyRolesInput {
+  roles: [UserRole!]!
+}
+
+type User {
+  createdAt: Date!
+  id: ID!
+  isVerified: Boolean!
+  phone: String!
+  rating: Float!
+  roles: [UserRole!]!
+  updatedAt: Date!
+}
+
+enum UserRole {
+  OWNER
+  WALKER
 }

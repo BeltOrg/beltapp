@@ -375,12 +375,12 @@ Frontend requirements:
 
 ### Phase 1: Domain Foundation
 
-- [ ] Add user, dog, order, and review entities.
-- [ ] Add TypeORM migrations for new tables, enums, indexes, and constraints.
-- [ ] Add modules for users, dogs, orders, reviews, and auth.
-- [ ] Keep database config and migration patterns consistent with
+- [x] Add user, dog, order, and review entities.
+- [x] Add TypeORM migrations for new tables, enums, indexes, and constraints.
+- [x] Add modules for users, dogs, orders, reviews, and auth.
+- [x] Keep database config and migration patterns consistent with
       [apps/server/src/config/database.config.ts](../apps/server/src/config/database.config.ts).
-- [ ] Use the existing server module layout as the implementation template for
+- [x] Use the existing server module layout as the implementation template for
       Belt modules.
 - [ ] Remove the chat module after Belt replaces its subscription example role,
       unless a short-lived compatibility period is needed during migration.
@@ -388,50 +388,50 @@ Frontend requirements:
 ### Phase 2: Auth Foundation
 
 - [ ] Choose the auth/session library integration point.
-- [ ] Add an application auth boundary so providers can be swapped later.
-- [ ] Add MVP auth mode using seeded/precreated users or a dev-only selector.
+- [x] Add an application auth boundary so providers can be swapped later.
+- [x] Add MVP auth mode using seeded/precreated users or a dev-only selector.
 - [ ] Add phone-login API surface if it is still useful for the chosen library.
 - [ ] Add dev/mock verification provider only if needed by MVP mode.
 - [ ] Add session/token issuance and validation.
-- [ ] Add current user extraction to GraphQL context.
-- [ ] Add guards/decorators for authenticated resolvers.
+- [x] Add current user extraction to GraphQL context.
+- [x] Add guards/decorators for authenticated resolvers.
 - [ ] Add logout and account-removal entrypoints at the application boundary.
 - [ ] Add tests for authenticated and unauthenticated access.
 
 ### Phase 3: Dog Management
 
-- [ ] Implement dog CRUD service and resolver.
-- [ ] Enforce owner-only access.
-- [ ] Add validation for dog input.
+- [x] Implement dog CRUD service and resolver.
+- [x] Enforce owner-only access.
+- [x] Add validation for dog input.
 - [ ] Add unit and resolver tests.
 
 ### Phase 4: Order Workflow
 
-- [ ] Implement canonical order status enum.
-- [ ] Implement order workflow service as the only transition authority.
-- [ ] Implement `createOrder`.
-- [ ] Implement race-safe `acceptOrder`.
-- [ ] Implement `startOrder`.
-- [ ] Implement `finishOrder`.
-- [ ] Implement `cancelOrder`.
-- [ ] Implement mock `markOrderPaid`.
-- [ ] Add transition matrix tests.
+- [x] Implement canonical order status enum.
+- [x] Implement order workflow service as the only transition authority.
+- [x] Implement `createOrder`.
+- [x] Implement race-safe `acceptOrder`.
+- [x] Implement `startOrder`.
+- [x] Implement `finishOrder`.
+- [x] Implement `cancelOrder`.
+- [x] Implement mock `markOrderPaid`.
+- [x] Add transition matrix tests.
 - [ ] Add permission tests for owner, assigned walker, unrelated walker, and
       unauthenticated user.
 - [ ] Add parallel accept test proving exactly one walker succeeds.
 
 ### Phase 5: Reviews And Ratings
 
-- [ ] Implement review creation.
-- [ ] Prevent duplicate reviews.
+- [x] Implement review creation.
+- [x] Prevent duplicate reviews.
 - [ ] Update or compute user ratings.
 - [ ] Add tests for review eligibility and rating updates.
 
 ### Phase 6: GraphQL Contract And Relay
 
-- [ ] Update schema manifest for new resolvers/scalars as needed.
-- [ ] Regenerate [libs/api/schema.gql](../libs/api/schema.gql).
-- [ ] Regenerate webapp Relay artifacts.
+- [x] Update schema manifest for new resolvers/scalars as needed.
+- [x] Regenerate [libs/api/schema.gql](../libs/api/schema.gql).
+- [x] Regenerate webapp Relay artifacts.
 - [ ] Keep server `graphql:check-contract` passing.
 
 ## Webapp Implementation Phases
@@ -477,12 +477,12 @@ Frontend requirements:
 
 ## Validation And CI
 
-- [ ] Add backend unit tests for state machine logic.
+- [x] Add backend unit tests for state machine logic.
 - [ ] Add backend GraphQL resolver tests for key mutations.
 - [ ] Add an e2e test for parallel order acceptance.
 - [ ] Update deployment smoke tests once the GraphQL surface changes.
-- [ ] Run `npm --prefix apps/server run graphql:schema`.
-- [ ] Run `npm --prefix apps/webapp run relay`.
+- [x] Run `npm --prefix apps/server run graphql:schema`.
+- [x] Run `npm --prefix apps/webapp run relay`.
 - [ ] Run Rush build/verify for affected projects.
 - [ ] Keep local devcontainer flow working with Postgres and Redis.
 
