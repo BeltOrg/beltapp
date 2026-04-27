@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   graphql,
@@ -9,6 +9,7 @@ import {
 import type { RecordProxy, RecordSourceSelectorProxy } from "relay-runtime";
 import type { BeltOrderDetailPageAcceptOrderMutation } from "./__generated__/BeltOrderDetailPageAcceptOrderMutation.graphql";
 import type { BeltOrderDetailPageCancelOrderMutation } from "./__generated__/BeltOrderDetailPageCancelOrderMutation.graphql";
+import type { BeltOrderDetailPageCreateReviewMutation } from "./__generated__/BeltOrderDetailPageCreateReviewMutation.graphql";
 import type { BeltOrderDetailPageFinishOrderMutation } from "./__generated__/BeltOrderDetailPageFinishOrderMutation.graphql";
 import type { BeltOrderDetailPageMarkPaidMutation } from "./__generated__/BeltOrderDetailPageMarkPaidMutation.graphql";
 import type { BeltOrderDetailPageQuery } from "./__generated__/BeltOrderDetailPageQuery.graphql";
@@ -21,7 +22,14 @@ import type { BeltOrderDetailPageStartOrderMutation } from "./__generated__/Belt
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
 import { useCurrentMvpUser } from "../../../shared/auth/mvp-auth";
 import { getRelayErrorMessage } from "../../../shared/relay/errors";
-import { Alert, Button, Surface } from "../../../shared/ui";
+import {
+  Alert,
+  Button,
+  Field,
+  SelectInput,
+  Surface,
+  TextArea,
+} from "../../../shared/ui";
 
 type BeltOrderDetailPageProps = {
   orderId: string;
@@ -85,6 +93,22 @@ function addOrderToRootList(
   }
 
   root.setLinkedRecords([order, ...currentOrders], fieldName);
+}
+
+function canReviewOrder(order: OrderRecord, currentUserId: string): boolean {
+  if (!isParticipant(order, currentUserId)) {
+    return false;
+  }
+
+  if (order.status !== "FINISHED" && order.status !== "PAID") {
+    return false;
+  }
+
+  return order.ownerId !== currentUserId || order.walkerId !== null;
+}
+
+function getRevieweeLabel(order: OrderRecord, currentUserId: string): string {
+  return order.ownerId === currentUserId ? "walker" : "owner";
 }
 
 function isParticipant(order: OrderRecord, currentUserId: string): boolean {
@@ -222,6 +246,15 @@ export function BeltOrderDetailPage({
         order(id: $id) {
           ...BeltOrderDetailPage_orderFields
         }
+        myReviews {
+          id
+          orderId
+          reviewerId
+          revieweeId
+          rating
+          comment
+          createdAt
+        }
       }
     `,
     { id: orderId },
@@ -274,9 +307,37 @@ export function BeltOrderDetailPage({
         }
       }
     `);
+  const [commitCreateReview] =
+    useMutation<BeltOrderDetailPageCreateReviewMutation>(graphql`
+      mutation BeltOrderDetailPageCreateReviewMutation(
+        $orderId: ID!
+        $input: CreateReviewInput!
+      ) {
+        createOrderReview(orderId: $orderId, input: $input) {
+          id
+          orderId
+          reviewerId
+          revieweeId
+          rating
+          comment
+          createdAt
+        }
+      }
+    `);
   const currentUserId = String(currentUser.id);
   const actions = getAvailableActions(order, currentUser);
   const isActionInFlight = activeAction !== null;
+  const existingReview = data.myReviews.find(
+    (review) =>
+      review.orderId === order.id && review.reviewerId === currentUserId,
+  );
+  const canReview = canReviewOrder(order, currentUserId);
+  const shouldShowReviewPanel =
+    view === "finish" || canReview || existingReview !== undefined;
+  const [reviewRating, setReviewRating] = useState("5");
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
 
   function commitAction(action: OrderAction) {
     const variables = { id: orderId };
@@ -339,6 +400,36 @@ export function BeltOrderDetailPage({
         });
         break;
     }
+  }
+
+  function handleReviewSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setReviewError(null);
+    setIsReviewSubmitting(true);
+
+    commitCreateReview({
+      variables: {
+        orderId,
+        input: {
+          rating: Number.parseInt(reviewRating, 10),
+          comment: reviewComment.trim() || null,
+        },
+      },
+      updater: (store) => {
+        const review = store.getRootField("createOrderReview");
+        if (review) {
+          addOrderToRootList(store, "myReviews", review);
+        }
+      },
+      onCompleted: () => {
+        setIsReviewSubmitting(false);
+        setReviewComment("");
+      },
+      onError: (error) => {
+        setIsReviewSubmitting(false);
+        setReviewError(getRelayErrorMessage(error));
+      },
+    });
   }
 
   const stateMessage = getOrderStateMessage(
@@ -418,6 +509,81 @@ export function BeltOrderDetailPage({
           No actions are available for your current role and this order state.
         </p>
       )}
+
+      {shouldShowReviewPanel ? (
+        <section className="grid gap-3 border-t border-border pt-4">
+          <div>
+            <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
+              Completion
+            </p>
+            <h3 className="m-0 text-lg font-semibold">Review walk</h3>
+          </div>
+
+          {existingReview ? (
+            <dl className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
+              <div>
+                <dt className="text-xs text-muted-foreground">Your rating</dt>
+                <dd className="m-0 font-semibold">
+                  {existingReview.rating}/5
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Reviewed</dt>
+                <dd className="m-0 font-semibold">
+                  {new Date(existingReview.createdAt).toLocaleString()}
+                </dd>
+              </div>
+              {existingReview.comment ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs text-muted-foreground">Comment</dt>
+                  <dd className="m-0 font-semibold">{existingReview.comment}</dd>
+                </div>
+              ) : null}
+            </dl>
+          ) : canReview ? (
+            <form className="grid gap-3" onSubmit={handleReviewSubmit}>
+              <p className="m-0 text-sm text-muted-foreground">
+                Rate the {getRevieweeLabel(order, currentUserId)} for this
+                walk.
+              </p>
+              {reviewError ? <Alert>{reviewError}</Alert> : null}
+              <Field label="Rating">
+                <SelectInput
+                  value={reviewRating}
+                  onChange={(event) => setReviewRating(event.target.value)}
+                >
+                  <option value="5">5 - Excellent</option>
+                  <option value="4">4 - Good</option>
+                  <option value="3">3 - Fine</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="1">1 - Bad</option>
+                </SelectInput>
+              </Field>
+              <Field label="Comment">
+                <TextArea
+                  rows={4}
+                  maxLength={500}
+                  value={reviewComment}
+                  onChange={(event) => setReviewComment(event.target.value)}
+                />
+              </Field>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isReviewSubmitting || isActionInFlight}
+                >
+                  {isReviewSubmitting ? "Saving..." : "Submit review"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className="m-0 text-sm text-muted-foreground">
+              Reviews become available after a participant finishes the walk.
+            </p>
+          )}
+        </section>
+      ) : null}
     </Surface>
   );
 }

@@ -550,7 +550,7 @@ small realtime framework layer:
 
 ### Phase 5: Reviews And Polish
 
-- [ ] Build finish/review screen.
+- [x] Build finish/review screen.
 - [ ] Add loading, empty, and error states.
 - [ ] Ensure responsive web layout remains usable on mobile-sized screens.
 
@@ -603,7 +603,7 @@ or database model.
 - [x] Parallel accept attempts cannot double-assign an order.
 - [x] Assigned walkers can start and finish walks.
 - [x] Orders follow the canonical state machine and reject invalid transitions.
-- [ ] Completed orders can be reviewed.
+- [x] Completed orders can be reviewed.
 - [ ] Chat example code is removed from the product path.
 - [x] Webapp product code is organized into Belt feature modules.
 - [ ] GraphQL contract, Relay artifacts, tests, and smoke checks match the Belt
