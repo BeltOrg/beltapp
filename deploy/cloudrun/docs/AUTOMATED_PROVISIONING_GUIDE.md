@@ -33,8 +33,8 @@ bash deploy/cloudrun/scripts/bootstrap-gcp.sh
 3. Manually create Neon in the Neon console:
 
 - region: `aws-eu-central-1`
-- database: `chatdb`
-- app user: for example `chatapp`
+- database: for example `beltdb`
+- app user: for example `beltapp`
 - copy:
   - pooled URL as `DATABASE_URL`
   - direct URL as `DATABASE_URL_DIRECT`
@@ -84,9 +84,7 @@ bash deploy/cloudrun/scripts/configure-github-vars.sh
 
 ```bash
 curl -fsS "https://YOUR_RUN_APP_URL/health"
-curl -fsS -H 'content-type: application/json' \
-  --data '{"query":"query { getMessages { id author body } }"}' \
-  "https://YOUR_RUN_APP_URL/graphql"
+bash deploy/cloudrun/tests/validate-post-deploy-smoke.sh "https://YOUR_RUN_APP_URL"
 ```
 
 The full step-by-step version, including what each script does and what stays manual, is in [PROVISIONING.md](PROVISIONING.md). I based that runbook on official docs from Google, Neon, and Upstash, including:

@@ -101,11 +101,26 @@ async function main() {
 
   try {
     await runtimeClient.query("BEGIN");
-    await runtimeClient.query("SELECT id FROM public.message LIMIT 1");
-    await runtimeClient.query(
-      "INSERT INTO public.message(author, body) VALUES ($1, $2)",
-      ["cloudrun-role-check", "least-privilege verification"],
+    await runtimeClient.query("SELECT id FROM public.belt_user LIMIT 1");
+    const verification = await runtimeClient.query(
+      `
+        INSERT INTO public.dog(owner_id, name, size, behavior_tags, notes)
+        SELECT id, $1, 'SMALL'::dog_size, ARRAY['FRIENDLY']::dog_behavior[], $2
+        FROM public.belt_user
+        WHERE 'OWNER' = ANY(roles)
+        ORDER BY id
+        LIMIT 1
+        RETURNING id
+      `,
+      ["cloudrun-role-check dog", "least-privilege verification"],
     );
+
+    if (verification.rowCount !== 1) {
+      throw new Error(
+        "Could not verify runtime insert access because no OWNER user exists.",
+      );
+    }
+
     await runtimeClient.query("ROLLBACK");
   } finally {
     await runtimeClient.end();

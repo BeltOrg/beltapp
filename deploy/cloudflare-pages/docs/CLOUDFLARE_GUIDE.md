@@ -292,9 +292,9 @@ After the Pages deploy finishes:
 
 1. Open the `*.pages.dev` URL.
 2. Confirm the app loads.
-3. Confirm the frontend can fetch messages from the backend.
-4. Confirm sending a new message works.
-5. Confirm subscriptions connect and receive new messages.
+3. Confirm login with one of the MVP users.
+4. Confirm the home/profile/dogs views can fetch Belt data from the backend.
+5. Create a test walk order and cancel it.
 
 Notes:
 

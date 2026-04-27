@@ -166,7 +166,7 @@ If you adopt this stack for a real project and own a frontend domain such as
 - if the frontend origin changes, update the backend `CLOUD_RUN_CORS_ORIGIN`
 - if the backend also moves to a custom domain, update `WEBAPP_VITE_GRAPHQL_HTTP` and `WEBAPP_VITE_GRAPHQL_WS`
 - redeploy the frontend after those env-var changes
-- re-check normal page load, GraphQL requests, and live subscriptions from the deployed site
+- re-check normal page load and Belt GraphQL requests from the deployed site
 
 ## References
 

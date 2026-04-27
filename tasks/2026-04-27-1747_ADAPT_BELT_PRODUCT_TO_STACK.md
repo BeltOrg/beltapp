@@ -559,7 +559,7 @@ small realtime framework layer:
 - [x] Add backend unit tests for state machine logic.
 - [x] Add backend GraphQL resolver tests for key mutations.
 - [x] Add an e2e test for parallel order acceptance.
-- [ ] Update deployment smoke tests once the GraphQL surface changes.
+- [x] Update deployment smoke tests once the GraphQL surface changes.
 - [ ] Add a realtime smoke test that terminates the websocket and verifies
       automatic resubscription without a page reload.
 - [x] Run `npm --prefix apps/server run graphql:schema`.
@@ -574,7 +574,7 @@ small realtime framework layer:
 - [ ] Update Cloud Run env examples if auth/session secrets are introduced.
 - [ ] Update Secret Manager sync script if new backend secrets are required.
 - [ ] Update webapp env examples if API or auth wiring changes.
-- [ ] Update post-deploy smoke tests from chat operations to Belt operations.
+- [x] Update post-deploy smoke tests from chat operations to Belt operations.
 - [x] Update docs that still describe Anonymous Chat as the product once Belt
       becomes the active app.
 

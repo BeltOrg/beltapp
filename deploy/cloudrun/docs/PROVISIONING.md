@@ -328,7 +328,7 @@ What should happen:
 
 Automation status:
 
-- GitHub Actions now runs automated post-deploy smoke tests for health, query, mutation, and subscription behavior
+- GitHub Actions now runs automated post-deploy smoke tests for health and the Belt GraphQL flow
 - manual verification is still useful as an extra spot check when you want to inspect the live deployment yourself
 
 After deploy, note the generated Cloud Run URL and verify:
@@ -348,8 +348,15 @@ Then test GraphQL:
 ```bash
 curl -fsS \
   -H 'content-type: application/json' \
-  --data '{"query":"query { getMessages { id author body } }"}' \
+  -H 'x-belt-user-id: 1' \
+  --data '{"query":"query { me { id roles isVerified } myDogs { id name } }"}' \
   "https://YOUR_RUN_APP_URL/graphql"
+```
+
+Or run the same smoke helper used by deploy automation:
+
+```bash
+bash deploy/cloudrun/tests/validate-post-deploy-smoke.sh "https://YOUR_RUN_APP_URL"
 ```
 
 If that succeeds, the backend provisioning path is good and the next step is

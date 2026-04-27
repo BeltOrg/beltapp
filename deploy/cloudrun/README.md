@@ -60,10 +60,11 @@ Quick automation map:
 - GitHub repository variables: [configure-github-vars.sh](scripts/configure-github-vars.sh)
 - Unified build, backend deploy, and webapp deploy orchestration: [../../.github/workflows/ci-release.yaml](../../.github/workflows/ci-release.yaml)
 - Neon and Upstash resource creation: still manual, documented in [NEON-UPSTASH-GUIDE.md](docs/NEON-UPSTASH-GUIDE.md)
-- Post-deploy health/query/mutation/subscription smoke validation: [tests/validate-post-deploy-smoke.sh](tests/validate-post-deploy-smoke.sh)
+- Post-deploy health and Belt GraphQL smoke validation: [tests/validate-post-deploy-smoke.sh](tests/validate-post-deploy-smoke.sh)
 - Temporary scale-up and cross-instance fanout validation: [tests/validate-multi-instance.sh](tests/validate-multi-instance.sh)
 - Hard outage plus redeploy reconnect diagnostic: [tests/validate-redeploy-reconnect.sh](tests/validate-redeploy-reconnect.sh)
   This is a useful live probe, but not a definitive browser reconnect approval test, because deleting a Cloud Run service does not always tear down an already-open websocket quickly enough to force a fresh reconnect cycle.
+  The realtime diagnostics still use the temporary chat subscription until Belt exposes its own subscription events.
 
 Operational runbooks:
 
@@ -121,7 +122,7 @@ If you adopt this stack for a real project and own a backend domain such as
 - point the frontend `VITE_GRAPHQL_HTTP` and `VITE_GRAPHQL_WS` values at that custom domain
 - keep `CLOUD_RUN_CORS_ORIGIN` aligned with the real frontend origin
 - verify `https://<your-api-domain>/health` and `https://<your-api-domain>/graphql`
-- verify GraphQL subscriptions over `wss://<your-api-domain>/graphql`
+- verify GraphQL subscriptions over `wss://<your-api-domain>/graphql` when realtime product flows are enabled
 - if the frontend also moves to a custom domain, coordinate that change with [deploy/cloudflare-pages/README.md](../cloudflare-pages/README.md)
 
 ## Notes
