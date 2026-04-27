@@ -2,14 +2,19 @@ import { CustomScalar, Scalar } from '@nestjs/graphql';
 import { Kind, ValueNode } from 'graphql';
 
 @Scalar('Date', () => Date)
-export class DateScalar implements CustomScalar<number, Date | null> {
+export class DateScalar implements CustomScalar<number | string, Date> {
   description = 'Date custom scalar type';
 
-  parseValue(value: unknown): Date | null {
-    if (typeof value !== 'number') {
-      return null;
+  parseValue(value: unknown): Date {
+    if (value instanceof Date) {
+      return this.parseDate(value.getTime());
     }
-    return new Date(value); // value from the client
+
+    if (typeof value === 'number' || typeof value === 'string') {
+      return this.parseDate(value);
+    }
+
+    throw new TypeError('DateScalar can only parse numbers or strings');
   }
 
   serialize(value: unknown): number {
@@ -19,10 +24,24 @@ export class DateScalar implements CustomScalar<number, Date | null> {
     return value.getTime(); // value sent to the client
   }
 
-  parseLiteral(ast: ValueNode): Date | null {
+  parseLiteral(ast: ValueNode): Date {
     if (ast.kind === Kind.INT) {
-      return new Date(Number(ast.value));
+      return this.parseDate(Number(ast.value));
     }
-    return null;
+
+    if (ast.kind === Kind.STRING) {
+      return this.parseDate(ast.value);
+    }
+
+    throw new TypeError('DateScalar can only parse int or string literals');
+  }
+
+  private parseDate(value: number | string): Date {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new TypeError('DateScalar can only parse valid dates');
+    }
+
+    return date;
   }
 }

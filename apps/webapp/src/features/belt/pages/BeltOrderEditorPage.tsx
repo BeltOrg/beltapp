@@ -16,13 +16,13 @@ import {
 
 type OrderFormValues = {
   dogId: string;
-  endTime: string;
+  endTime: number;
   locationAddress: string;
   locationLat: number;
   locationLng: number;
   priceAmount: number;
   priceCurrency: string;
-  startTime: string;
+  startTime: number;
 };
 
 function padDatePart(value: number): string {
@@ -58,9 +58,9 @@ function readTextField(formData: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function parseLocalDateTime(value: string): string | null {
+function parseLocalDateTime(value: string): number | null {
   const timestamp = Date.parse(value);
-  return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
+  return Number.isNaN(timestamp) ? null : timestamp;
 }
 
 function readOrderForm(form: HTMLFormElement): OrderFormValues | string {
@@ -100,7 +100,7 @@ function readOrderForm(form: HTMLFormElement): OrderFormValues | string {
     return "Start and end times are required.";
   }
 
-  if (new Date(endTime).getTime() <= new Date(startTime).getTime()) {
+  if (endTime <= startTime) {
     return "End time must be after start time.";
   }
 
