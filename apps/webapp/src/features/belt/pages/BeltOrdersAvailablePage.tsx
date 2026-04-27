@@ -59,7 +59,11 @@ export function BeltOrdersAvailablePage() {
           ))}
         </ul>
       ) : (
-        <BeltEmptyState title="No available walks" />
+        <BeltEmptyState
+          title="No available walks"
+          description="New owner requests will appear here when they are ready."
+          action={{ label: "Return home", href: "/home" }}
+        />
       )}
     </Surface>
   );

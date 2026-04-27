@@ -2,13 +2,17 @@ import { EmptyState } from "../../../shared/ui";
 
 type BeltEmptyStateProps = {
   title: string;
+  description?: string;
   action?: {
     label: string;
     href: string;
-    onNavigate?: (nextPath: string) => void;
   };
 };
 
-export function BeltEmptyState({ title, action }: BeltEmptyStateProps) {
-  return <EmptyState action={action} title={title} />;
+export function BeltEmptyState({
+  action,
+  description,
+  title,
+}: BeltEmptyStateProps) {
+  return <EmptyState action={action} description={description} title={title} />;
 }

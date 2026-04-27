@@ -44,6 +44,13 @@ export function BeltDashboardPage() {
     ...data.myOwnerOrders.map((order) => ({ ...order, side: "Owner" })),
     ...data.myWalkerOrders.map((order) => ({ ...order, side: "Walker" })),
   ].filter((order) => order.status !== "PAID" && order.status !== "CANCELLED");
+  const isOwner = data.me.roles.includes("OWNER");
+  const isWalker = data.me.roles.includes("WALKER");
+  const primaryWalkAction = isOwner
+    ? { label: "New walk", href: "/orders/new" }
+    : isWalker
+      ? { label: "Find walks", href: "/orders/available" }
+      : undefined;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
@@ -74,11 +81,13 @@ export function BeltDashboardPage() {
       </Surface>
 
       <Surface>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <h2 className="m-0 text-xl font-semibold">Active walks</h2>
-          <Button asChild variant="primary">
-            <Link to="/orders/new">New walk</Link>
-          </Button>
+          {primaryWalkAction ? (
+            <Button asChild variant="primary">
+              <Link to={primaryWalkAction.href}>{primaryWalkAction.label}</Link>
+            </Button>
+          ) : null}
         </div>
         {activeOrders.length > 0 ? (
           <ul className="grid gap-3 p-0">
@@ -100,44 +109,45 @@ export function BeltDashboardPage() {
         ) : (
           <BeltEmptyState
             title="No active walks"
-            action={{
-              label: "Create walk",
-              href: "/orders/new",
-            }}
+            description="New and accepted walks will appear here."
+            action={primaryWalkAction}
           />
         )}
       </Surface>
 
-      <Surface>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="m-0 text-xl font-semibold">Dogs</h2>
-          <Link className="font-semibold text-primary" to="/dogs">
-            View all
-          </Link>
-        </div>
-        {data.myDogs.length > 0 ? (
-          <ul className="grid gap-3 p-0">
-            {data.myDogs.slice(0, 4).map((dog) => (
-              <li
-                key={dog.id}
-                className="rounded-ui border border-border bg-surface p-3"
-              >
-                <div>
-                  <strong className="block">{dog.name}</strong>
-                  <span className="text-sm text-muted-foreground">
-                    {dog.size}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <BeltEmptyState
-            title="No dogs yet"
-            action={{ label: "Add dog", href: "/dogs/new" }}
-          />
-        )}
-      </Surface>
+      {isOwner ? (
+        <Surface>
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <h2 className="m-0 text-xl font-semibold">Dogs</h2>
+            <Link className="font-semibold text-primary" to="/dogs">
+              View all
+            </Link>
+          </div>
+          {data.myDogs.length > 0 ? (
+            <ul className="grid gap-3 p-0">
+              {data.myDogs.slice(0, 4).map((dog) => (
+                <li
+                  key={dog.id}
+                  className="rounded-ui border border-border bg-surface p-3"
+                >
+                  <div>
+                    <strong className="block">{dog.name}</strong>
+                    <span className="text-sm text-muted-foreground">
+                      {dog.size}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <BeltEmptyState
+              title="No dogs yet"
+              description="Add a dog profile before creating a walk."
+              action={{ label: "Add dog", href: "/dogs/new" }}
+            />
+          )}
+        </Surface>
+      ) : null}
     </div>
   );
 }

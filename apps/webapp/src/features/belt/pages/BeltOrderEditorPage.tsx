@@ -189,6 +189,7 @@ export function BeltOrderEditorPage() {
       <h2 className="m-0 text-xl font-semibold">Create walk</h2>
       {data.myDogs.length > 0 ? (
         <form
+          aria-busy={isCreating}
           className="grid gap-3"
           onSubmit={(event) => {
             event.preventDefault();
@@ -196,80 +197,86 @@ export function BeltOrderEditorPage() {
           }}
         >
           {formError ? <Alert>{formError}</Alert> : null}
-          <Field label="Dog">
-            <SelectInput
-              name="dogId"
-              defaultValue={data.myDogs[0]?.id}
-              required
-            >
-              {data.myDogs.map((dog) => (
-                <option key={dog.id} value={dog.id}>
-                  {dog.name}
-                </option>
-              ))}
-            </SelectInput>
-          </Field>
-          <Field label="Address">
-            <TextInput
-              name="locationAddress"
-              type="text"
-              maxLength={240}
-              required
-            />
-          </Field>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Price">
+          <fieldset className="grid gap-3 border-0 p-0" disabled={isCreating}>
+            <Field label="Dog">
+              <SelectInput
+                name="dogId"
+                defaultValue={data.myDogs[0]?.id}
+                required
+              >
+                {data.myDogs.map((dog) => (
+                  <option key={dog.id} value={dog.id}>
+                    {dog.name}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+            <Field label="Address">
               <TextInput
-                name="priceAmount"
-                type="number"
-                min="0"
-                step="1"
+                name="locationAddress"
+                type="text"
+                maxLength={240}
                 required
               />
             </Field>
-            <Field label="Latitude">
-              <TextInput
-                name="locationLat"
-                type="number"
-                step="0.000001"
-                defaultValue="59.437000"
-                required
-              />
-            </Field>
-            <Field label="Longitude">
-              <TextInput
-                name="locationLng"
-                type="number"
-                step="0.000001"
-                defaultValue="24.753600"
-                required
-              />
-            </Field>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Start">
-              <TextInput
-                name="startTime"
-                type="datetime-local"
-                defaultValue={defaultTimes.startTime}
-                required
-              />
-            </Field>
-            <Field label="End">
-              <TextInput
-                name="endTime"
-                type="datetime-local"
-                defaultValue={defaultTimes.endTime}
-                required
-              />
-            </Field>
-          </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Price">
+                <TextInput
+                  name="priceAmount"
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                />
+              </Field>
+              <Field label="Latitude">
+                <TextInput
+                  name="locationLat"
+                  type="number"
+                  step="0.000001"
+                  defaultValue="59.437000"
+                  required
+                />
+              </Field>
+              <Field label="Longitude">
+                <TextInput
+                  name="locationLng"
+                  type="number"
+                  step="0.000001"
+                  defaultValue="24.753600"
+                  required
+                />
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Start">
+                <TextInput
+                  name="startTime"
+                  type="datetime-local"
+                  defaultValue={defaultTimes.startTime}
+                  required
+                />
+              </Field>
+              <Field label="End">
+                <TextInput
+                  name="endTime"
+                  type="datetime-local"
+                  defaultValue={defaultTimes.endTime}
+                  required
+                />
+              </Field>
+            </div>
+          </fieldset>
           <Button variant="primary" type="submit" disabled={isCreating}>
             {isCreating ? "Creating..." : "Create order"}
           </Button>
         </form>
       ) : (
-        <BeltEmptyState title="Add a dog before creating a walk" />
+        <BeltEmptyState
+          title="Add a dog before creating a walk"
+          description="Walk requests need an owner dog profile first."
+          action={{ label: "Add dog", href: "/dogs/new" }}
+        />
       )}
     </Surface>
   );

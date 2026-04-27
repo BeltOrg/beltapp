@@ -5,10 +5,10 @@ import {
   useIsCurrentMvpUserAuthenticated,
   userHasAnyRole,
 } from "../shared/auth/mvp-auth";
-import { Button } from "../shared/ui";
+import { getRelayErrorMessage } from "../shared/relay/errors";
+import { ErrorState, PendingState } from "../shared/ui";
 import { Navigation } from "./AppNavigation";
 import {
-  Link,
   Navigate,
   Outlet,
   RouterProvider,
@@ -105,32 +105,26 @@ function useRouteTitle(): string {
 
 function RoutePendingState() {
   return (
-    <section
-      className="rounded-ui border border-border bg-surface p-4"
-      role="status"
-      aria-live="polite"
-    >
-      <p>Loading...</p>
-    </section>
+    <PendingState
+      title="Loading page"
+      description="Fetching the latest Belt data."
+    />
   );
 }
 
 function RouterErrorBoundary() {
   const error = useRouteError();
   const message =
-    error instanceof Error ? error.message : "The page could not be loaded.";
+    error instanceof Error
+      ? getRelayErrorMessage(error)
+      : "The page could not be loaded.";
 
   return (
-    <section className="grid gap-3 rounded-ui border border-danger/40 bg-danger/10 p-4">
-      <p className="text-xs font-bold uppercase text-danger-foreground">
-        Route error
-      </p>
-      <h1 className="m-0 text-2xl font-semibold">Something went wrong.</h1>
-      <p className="m-0 max-w-prose text-muted-foreground">{message}</p>
-      <Button asChild>
-        <Link to="/home">Return home</Link>
-      </Button>
-    </section>
+    <ErrorState
+      eyebrow="Route error"
+      message={message}
+      action={{ label: "Return home", href: "/home" }}
+    />
   );
 }
 
@@ -249,17 +243,12 @@ function NotFoundPage() {
   const location = useLocation();
 
   return (
-    <section className="grid gap-3">
-      <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
-        Page not found
-      </p>
-      <h2 className="m-0 text-2xl font-semibold">
-        Unknown route: {location.pathname}
-      </h2>
-      <Button asChild>
-        <Link to="/home">Return home</Link>
-      </Button>
-    </section>
+    <ErrorState
+      eyebrow="Page not found"
+      title="Unknown route"
+      message={location.pathname}
+      action={{ label: "Return home", href: "/home" }}
+    />
   );
 }
 

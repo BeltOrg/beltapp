@@ -26,7 +26,7 @@ export function BeltDogDetailPage({ dogId }: BeltDogDetailPageProps) {
 
   return (
     <Surface>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <div>
           <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
             Dog profile

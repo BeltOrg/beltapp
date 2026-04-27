@@ -551,7 +551,7 @@ small realtime framework layer:
 ### Phase 5: Reviews And Polish
 
 - [x] Build finish/review screen.
-- [ ] Add loading, empty, and error states.
+- [x] Add loading, empty, and error states.
 - [ ] Ensure responsive web layout remains usable on mobile-sized screens.
 
 ## Validation And CI

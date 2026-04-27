@@ -439,7 +439,7 @@ export function BeltOrderDetailPage({
 
   return (
     <Surface framed>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <div>
           <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
             {view ? `${view} view` : "Order detail"}
@@ -541,32 +541,41 @@ export function BeltOrderDetailPage({
               ) : null}
             </dl>
           ) : canReview ? (
-            <form className="grid gap-3" onSubmit={handleReviewSubmit}>
+            <form
+              aria-busy={isReviewSubmitting}
+              className="grid gap-3"
+              onSubmit={handleReviewSubmit}
+            >
               <p className="m-0 text-sm text-muted-foreground">
                 Rate the {getRevieweeLabel(order, currentUserId)} for this
                 walk.
               </p>
               {reviewError ? <Alert>{reviewError}</Alert> : null}
-              <Field label="Rating">
-                <SelectInput
-                  value={reviewRating}
-                  onChange={(event) => setReviewRating(event.target.value)}
-                >
-                  <option value="5">5 - Excellent</option>
-                  <option value="4">4 - Good</option>
-                  <option value="3">3 - Fine</option>
-                  <option value="2">2 - Poor</option>
-                  <option value="1">1 - Bad</option>
-                </SelectInput>
-              </Field>
-              <Field label="Comment">
-                <TextArea
-                  rows={4}
-                  maxLength={500}
-                  value={reviewComment}
-                  onChange={(event) => setReviewComment(event.target.value)}
-                />
-              </Field>
+              <fieldset
+                className="grid gap-3 border-0 p-0"
+                disabled={isReviewSubmitting || isActionInFlight}
+              >
+                <Field label="Rating">
+                  <SelectInput
+                    value={reviewRating}
+                    onChange={(event) => setReviewRating(event.target.value)}
+                  >
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Fine</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Bad</option>
+                  </SelectInput>
+                </Field>
+                <Field label="Comment">
+                  <TextArea
+                    rows={4}
+                    maxLength={500}
+                    value={reviewComment}
+                    onChange={(event) => setReviewComment(event.target.value)}
+                  />
+                </Field>
+              </fieldset>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="submit"

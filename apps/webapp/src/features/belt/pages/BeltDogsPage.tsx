@@ -23,7 +23,7 @@ export function BeltDogsPage() {
 
   return (
     <Surface>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <h2 className="m-0 text-xl font-semibold">Dog profiles</h2>
         <Button asChild variant="primary">
           <Link to="/dogs/new">Add dog</Link>
@@ -57,6 +57,7 @@ export function BeltDogsPage() {
       ) : (
         <BeltEmptyState
           title="No dogs yet"
+          description="Dog profiles keep the owner flow ready for new walks."
           action={{ label: "Add dog", href: "/dogs/new" }}
         />
       )}

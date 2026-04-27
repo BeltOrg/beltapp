@@ -96,65 +96,68 @@ function DogForm({
 }) {
   return (
     <form
+      aria-busy={isSaving}
       className="grid gap-3"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit(event.currentTarget);
       }}
     >
-      <Field label="Name">
-        <TextInput
-          name="name"
-          type="text"
-          defaultValue={defaultValues?.name ?? ""}
-          maxLength={80}
-          required
-        />
-      </Field>
-      <Field label="Size">
-        <SelectInput
-          name="size"
-          defaultValue={defaultValues?.size ?? "MEDIUM"}
-          required
-        >
-          {DOG_SIZE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectInput>
-      </Field>
-      <fieldset className="grid gap-2 rounded-ui border border-border p-3">
-        <legend className="px-1 text-sm font-semibold text-muted-foreground">
-          Behavior
-        </legend>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {DOG_BEHAVIOR_OPTIONS.map((option) => (
-            <label
-              key={option.value}
-              className="flex items-center gap-2 text-sm font-medium"
-            >
-              <input
-                type="checkbox"
-                name="behaviorTags"
-                value={option.value}
-                defaultChecked={defaultValues?.behaviorTags?.includes(
-                  option.value,
-                )}
-              />
-              <span>{option.label}</span>
-            </label>
-          ))}
-        </div>
+      <fieldset className="grid gap-3 border-0 p-0" disabled={isSaving}>
+        <Field label="Name">
+          <TextInput
+            name="name"
+            type="text"
+            defaultValue={defaultValues?.name ?? ""}
+            maxLength={80}
+            required
+          />
+        </Field>
+        <Field label="Size">
+          <SelectInput
+            name="size"
+            defaultValue={defaultValues?.size ?? "MEDIUM"}
+            required
+          >
+            {DOG_SIZE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+        <fieldset className="grid gap-2 rounded-ui border border-border p-3">
+          <legend className="px-1 text-sm font-semibold text-muted-foreground">
+            Behavior
+          </legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {DOG_BEHAVIOR_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className="flex items-center gap-2 text-sm font-medium"
+              >
+                <input
+                  type="checkbox"
+                  name="behaviorTags"
+                  value={option.value}
+                  defaultChecked={defaultValues?.behaviorTags?.includes(
+                    option.value,
+                  )}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <Field label="Notes">
+          <TextArea
+            name="notes"
+            rows={5}
+            defaultValue={defaultValues?.notes ?? ""}
+            maxLength={500}
+          />
+        </Field>
       </fieldset>
-      <Field label="Notes">
-        <TextArea
-          name="notes"
-          rows={5}
-          defaultValue={defaultValues?.notes ?? ""}
-          maxLength={500}
-        />
-      </Field>
       <Button variant="primary" type="submit" disabled={isSaving}>
         {isSaving ? "Saving..." : submitLabel}
       </Button>
@@ -316,7 +319,7 @@ function EditDogPage({ dogId }: { dogId: string }) {
 
   return (
     <Surface framed className="max-w-xl">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <h2 className="m-0 text-xl font-semibold">Edit dog</h2>
         <Button variant="ghost" onClick={handleDelete} disabled={isSaving}>
           {isDeleting ? "Deleting..." : "Delete"}
