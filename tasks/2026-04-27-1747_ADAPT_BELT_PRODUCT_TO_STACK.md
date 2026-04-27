@@ -371,6 +371,63 @@ Frontend requirements:
 - Keep forms simple and resilient.
 - Do not expose privileged actions just because the route is reachable.
 
+## GraphQL Subscription Resilience
+
+Cloud Run can periodically drop long-lived WebSocket connections. This is an
+expected platform behavior for our deployment target, so Belt realtime features
+must treat GraphQL subscriptions as recoverable streams rather than permanent
+connections.
+
+The current anonymous chat implementation already contains the reference
+solution:
+
+- Server GraphQL subscriptions are enabled through `graphql-ws` in
+  [apps/server/src/app.module.ts](../apps/server/src/app.module.ts).
+- The server sets a `connectionInitWaitTimeout`, assigns a per-socket
+  connection id, and logs `connect`, `disconnect`, and `subscribe` lifecycle
+  events through structured subscription logs.
+- The server-side chat pub/sub adapter in
+  [apps/server/src/modules/chat/chat-pubsub.service.ts](../apps/server/src/modules/chat/chat-pubsub.service.ts)
+  can use in-memory pub/sub locally or Redis in deployed/multi-instance
+  environments. Redis is important because a reconnect may land on a different
+  Cloud Run instance.
+- The webapp centralizes the resilient `graphql-ws` client in
+  [apps/webapp/src/realtime-connection.ts](../apps/webapp/src/realtime-connection.ts).
+- The client is lazy, sends heartbeat pings every 10 seconds, terminates the
+  socket if a pong is not received within 5 seconds, retries forever for
+  recoverable closes, and uses capped exponential backoff with jitter.
+- Fatal GraphQL protocol close codes are not retried, so authentication or
+  malformed-operation failures do not loop indefinitely.
+- Browser `online` and `offline` events are exposed through
+  `useRealtimeConnectionState`, allowing product UI to show connection state and
+  temporarily disable realtime-dependent actions while the stream is recovering.
+- Relay subscriptions are routed through the shared websocket client in
+  [apps/webapp/src/main.tsx](../apps/webapp/src/main.tsx), so individual
+  components should not create their own websocket clients.
+- The chat UI in
+  [apps/webapp/src/components/chat/Chat.tsx](../apps/webapp/src/components/chat/Chat.tsx)
+  demonstrates how a feature consumes `useSubscription`, shows live connection
+  status, and handles retrying/disconnected states.
+
+Belt should keep this behavior but move it from chat-specific knowledge into a
+small realtime framework layer:
+
+- Server realtime infrastructure should own GraphQL websocket setup,
+  subscription lifecycle logging, current-user propagation for websocket
+  operations, and the publish/subscribe adapter.
+- Domain modules should publish typed domain events such as order accepted,
+  order started, order finished, review created, and walker assignment changed.
+- Product resolvers should expose subscriptions by delegating to the shared
+  realtime/event layer rather than creating module-local websocket or pub/sub
+  infrastructure.
+- Webapp realtime infrastructure should continue to own the single
+  `graphql-ws` client, heartbeat/reconnect policy, Relay subscription network
+  integration, and connection-state store.
+- Feature modules should only consume `useSubscription` plus shared connection
+  state helpers.
+- Reconnect behavior must be tested or smoke-tested by forcing socket
+  termination and proving subscriptions resubscribe without a full page reload.
+
 ## Backend Implementation Phases
 
 ### Phase 1: Domain Foundation
@@ -382,6 +439,11 @@ Frontend requirements:
       [apps/server/src/config/database.config.ts](../apps/server/src/config/database.config.ts).
 - [x] Use the existing server module layout as the implementation template for
       Belt modules.
+- [ ] Extract GraphQL subscription setup and lifecycle logging into shared
+      realtime infrastructure before adding Belt subscriptions.
+- [ ] Add websocket current-user propagation to the shared auth/realtime layer.
+- [ ] Extract Redis/in-memory pub/sub into a reusable domain event adapter
+      instead of keeping the pattern inside chat.
 - [ ] Remove the chat module after Belt replaces its subscription example role,
       unless a short-lived compatibility period is needed during migration.
 
@@ -442,6 +504,10 @@ Frontend requirements:
       Belt UI grows too large.
 - [ ] Keep the existing Relay, GraphQL endpoint, subscription, and preload
       recovery setup while moving product code into the new structure.
+- [ ] Promote `realtime-connection` into shared webapp infrastructure used by
+      all Belt subscription consumers.
+- [ ] Keep one websocket client for the app; feature modules must not create
+      separate GraphQL websocket clients.
 - [ ] Replace chat-first home with Belt route structure.
 - [ ] Add auth-aware routing.
 - [ ] Add role-aware navigation.
@@ -481,6 +547,8 @@ Frontend requirements:
 - [ ] Add backend GraphQL resolver tests for key mutations.
 - [ ] Add an e2e test for parallel order acceptance.
 - [ ] Update deployment smoke tests once the GraphQL surface changes.
+- [ ] Add a realtime smoke test that terminates the websocket and verifies
+      automatic resubscription without a page reload.
 - [x] Run `npm --prefix apps/server run graphql:schema`.
 - [x] Run `npm --prefix apps/webapp run relay`.
 - [ ] Run Rush build/verify for affected projects.
