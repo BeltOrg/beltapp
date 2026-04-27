@@ -88,16 +88,7 @@ export class CreateBeltTables20260427180000 implements MigrationInterface {
         started_at timestamptz,
         finished_at timestamptz,
         cancelled_at timestamptz,
-        paid_at timestamptz,
-        CONSTRAINT chk_walk_order_price_amount_non_negative
-          CHECK (price_amount >= 0),
-        CONSTRAINT chk_walk_order_time_range
-          CHECK (end_time > start_time),
-        CONSTRAINT chk_walk_order_walker_required_after_acceptance
-          CHECK (
-            status IN ('CREATED', 'CANCELLED')
-            OR walker_id IS NOT NULL
-          )
+        paid_at timestamptz
       )
     `);
 
@@ -109,71 +100,101 @@ export class CreateBeltTables20260427180000 implements MigrationInterface {
         reviewee_id integer NOT NULL REFERENCES belt_user(id) ON DELETE CASCADE,
         rating integer NOT NULL,
         comment varchar(500),
-        created_at timestamptz NOT NULL DEFAULT now(),
-        CONSTRAINT uq_order_review_order_reviewer
-          UNIQUE (order_id, reviewer_id),
-        CONSTRAINT chk_order_review_rating_range
-          CHECK (rating >= 1 AND rating <= 5),
-        CONSTRAINT chk_order_review_not_self
-          CHECK (reviewer_id <> reviewee_id)
+        created_at timestamptz NOT NULL DEFAULT now()
       )
     `);
 
     await queryRunner.query(`
       DO $$
       BEGIN
-        ALTER TABLE walk_order
-          ADD CONSTRAINT chk_walk_order_price_amount_non_negative
-          CHECK (price_amount >= 0);
-      EXCEPTION WHEN duplicate_object THEN NULL;
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'chk_walk_order_price_amount_non_negative'
+            AND conrelid = 'walk_order'::regclass
+        ) THEN
+          ALTER TABLE walk_order
+            ADD CONSTRAINT chk_walk_order_price_amount_non_negative
+            CHECK (price_amount >= 0);
+        END IF;
       END $$;
     `);
     await queryRunner.query(`
       DO $$
       BEGIN
-        ALTER TABLE walk_order
-          ADD CONSTRAINT chk_walk_order_time_range
-          CHECK (end_time > start_time);
-      EXCEPTION WHEN duplicate_object THEN NULL;
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'chk_walk_order_time_range'
+            AND conrelid = 'walk_order'::regclass
+        ) THEN
+          ALTER TABLE walk_order
+            ADD CONSTRAINT chk_walk_order_time_range
+            CHECK (end_time > start_time);
+        END IF;
       END $$;
     `);
     await queryRunner.query(`
       DO $$
       BEGIN
-        ALTER TABLE walk_order
-          ADD CONSTRAINT chk_walk_order_walker_required_after_acceptance
-          CHECK (
-            status IN ('CREATED', 'CANCELLED')
-            OR walker_id IS NOT NULL
-          );
-      EXCEPTION WHEN duplicate_object THEN NULL;
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'chk_walk_order_walker_required_after_acceptance'
+            AND conrelid = 'walk_order'::regclass
+        ) THEN
+          ALTER TABLE walk_order
+            ADD CONSTRAINT chk_walk_order_walker_required_after_acceptance
+            CHECK (
+              status IN ('CREATED', 'CANCELLED')
+              OR walker_id IS NOT NULL
+            );
+        END IF;
       END $$;
     `);
     await queryRunner.query(`
       DO $$
       BEGIN
-        ALTER TABLE order_review
-          ADD CONSTRAINT uq_order_review_order_reviewer
-          UNIQUE (order_id, reviewer_id);
-      EXCEPTION WHEN duplicate_object THEN NULL;
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'uq_order_review_order_reviewer'
+            AND conrelid = 'order_review'::regclass
+        ) THEN
+          ALTER TABLE order_review
+            ADD CONSTRAINT uq_order_review_order_reviewer
+            UNIQUE (order_id, reviewer_id);
+        END IF;
       END $$;
     `);
     await queryRunner.query(`
       DO $$
       BEGIN
-        ALTER TABLE order_review
-          ADD CONSTRAINT chk_order_review_rating_range
-          CHECK (rating >= 1 AND rating <= 5);
-      EXCEPTION WHEN duplicate_object THEN NULL;
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'chk_order_review_rating_range'
+            AND conrelid = 'order_review'::regclass
+        ) THEN
+          ALTER TABLE order_review
+            ADD CONSTRAINT chk_order_review_rating_range
+            CHECK (rating >= 1 AND rating <= 5);
+        END IF;
       END $$;
     `);
     await queryRunner.query(`
       DO $$
       BEGIN
-        ALTER TABLE order_review
-          ADD CONSTRAINT chk_order_review_not_self
-          CHECK (reviewer_id <> reviewee_id);
-      EXCEPTION WHEN duplicate_object THEN NULL;
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'chk_order_review_not_self'
+            AND conrelid = 'order_review'::regclass
+        ) THEN
+          ALTER TABLE order_review
+            ADD CONSTRAINT chk_order_review_not_self
+            CHECK (reviewer_id <> reviewee_id);
+        END IF;
       END $$;
     `);
 
