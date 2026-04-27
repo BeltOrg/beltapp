@@ -36,12 +36,7 @@ type BeltOrderDetailPageProps = {
   view?: "waiting" | "active" | "finish";
 };
 
-type OrderAction =
-  | "accept"
-  | "start"
-  | "finish"
-  | "cancel"
-  | "mark-paid";
+type OrderAction = "accept" | "start" | "finish" | "cancel" | "mark-paid";
 
 type OrderRecord = BeltOrderDetailPage_orderFields$data;
 
@@ -137,12 +132,7 @@ function getAvailableActions(
   const isWalker = currentUser.roles.includes("WALKER");
   const actions: OrderAction[] = [];
 
-  if (
-    order.status === "CREATED" &&
-    !order.walkerId &&
-    isWalker &&
-    !isOwner
-  ) {
+  if (order.status === "CREATED" && !order.walkerId && isWalker && !isOwner) {
     actions.push("accept");
   }
 
@@ -272,14 +262,15 @@ export function BeltOrderDetailPage({
         }
       }
     `);
-  const [commitStartOrder] =
-    useMutation<BeltOrderDetailPageStartOrderMutation>(graphql`
+  const [commitStartOrder] = useMutation<BeltOrderDetailPageStartOrderMutation>(
+    graphql`
       mutation BeltOrderDetailPageStartOrderMutation($id: ID!) {
         startOrder(id: $id) {
           ...BeltOrderDetailPage_orderFields
         }
       }
-    `);
+    `,
+  );
   const [commitFinishOrder] =
     useMutation<BeltOrderDetailPageFinishOrderMutation>(graphql`
       mutation BeltOrderDetailPageFinishOrderMutation($id: ID!) {
@@ -299,14 +290,15 @@ export function BeltOrderDetailPage({
         }
       }
     `);
-  const [commitMarkPaid] =
-    useMutation<BeltOrderDetailPageMarkPaidMutation>(graphql`
+  const [commitMarkPaid] = useMutation<BeltOrderDetailPageMarkPaidMutation>(
+    graphql`
       mutation BeltOrderDetailPageMarkPaidMutation($id: ID!) {
         markOrderPaid(id: $id) {
           ...BeltOrderDetailPage_orderFields
         }
       }
-    `);
+    `,
+  );
   const [commitCreateReview] =
     useMutation<BeltOrderDetailPageCreateReviewMutation>(graphql`
       mutation BeltOrderDetailPageCreateReviewMutation(
@@ -444,9 +436,7 @@ export function BeltOrderDetailPage({
           <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
             {view ? `${view} view` : "Order detail"}
           </p>
-          <h2 className="m-0 text-xl font-semibold">
-            {order.locationAddress}
-          </h2>
+          <h2 className="m-0 text-xl font-semibold">{order.locationAddress}</h2>
         </div>
         <BeltStatusBadge status={order.status} />
       </div>
@@ -523,9 +513,7 @@ export function BeltOrderDetailPage({
             <dl className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
               <div>
                 <dt className="text-xs text-muted-foreground">Your rating</dt>
-                <dd className="m-0 font-semibold">
-                  {existingReview.rating}/5
-                </dd>
+                <dd className="m-0 font-semibold">{existingReview.rating}/5</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">Reviewed</dt>
@@ -536,7 +524,9 @@ export function BeltOrderDetailPage({
               {existingReview.comment ? (
                 <div className="sm:col-span-2">
                   <dt className="text-xs text-muted-foreground">Comment</dt>
-                  <dd className="m-0 font-semibold">{existingReview.comment}</dd>
+                  <dd className="m-0 font-semibold">
+                    {existingReview.comment}
+                  </dd>
                 </div>
               ) : null}
             </dl>
@@ -547,8 +537,7 @@ export function BeltOrderDetailPage({
               onSubmit={handleReviewSubmit}
             >
               <p className="m-0 text-sm text-muted-foreground">
-                Rate the {getRevieweeLabel(order, currentUserId)} for this
-                walk.
+                Rate the {getRevieweeLabel(order, currentUserId)} for this walk.
               </p>
               {reviewError ? <Alert>{reviewError}</Alert> : null}
               <fieldset
