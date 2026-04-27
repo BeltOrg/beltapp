@@ -18,7 +18,7 @@ export type GraphqlResponse<TData> = {
 type GraphqlRequestOptions = {
   query: string;
   variables?: Record<string, unknown>;
-  userId?: number;
+  userId?: number | null;
 };
 
 let migrationsReady: Promise<void> | undefined;
@@ -66,13 +66,19 @@ export async function graphqlRequest<TData>(
   app: NestFastifyApplication,
   options: GraphqlRequestOptions,
 ): Promise<GraphqlResponse<TData>> {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+  };
+
+  if (options.userId !== undefined) {
+    headers['x-belt-user-id'] =
+      options.userId === null ? '0' : String(options.userId);
+  }
+
   const response = await app.inject({
     method: 'POST',
     url: '/graphql',
-    headers: {
-      'content-type': 'application/json',
-      ...(options.userId ? { 'x-belt-user-id': String(options.userId) } : {}),
-    },
+    headers,
     payload: JSON.stringify({
       query: options.query,
       variables: options.variables ?? {},

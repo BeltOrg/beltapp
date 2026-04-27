@@ -458,14 +458,16 @@ small realtime framework layer:
 - [x] Add current user extraction to GraphQL context.
 - [x] Add guards/decorators for authenticated resolvers.
 - [ ] Add logout and account-removal entrypoints at the application boundary.
-- [ ] Add tests for authenticated and unauthenticated access.
+- [x] Add tests for authenticated and unauthenticated access.
 
 ### Phase 3: Dog Management
 
 - [x] Implement dog CRUD service and resolver.
 - [x] Enforce owner-only access.
 - [x] Add validation for dog input.
-- [ ] Add unit and resolver tests.
+- [x] Add GraphQL e2e tests for dog ownership rules.
+- [ ] Add unit tests if dog management logic grows beyond simple ownership
+      checks.
 
 ### Phase 4: Order Workflow
 
@@ -478,7 +480,7 @@ small realtime framework layer:
 - [x] Implement `cancelOrder`.
 - [x] Implement mock `markOrderPaid`.
 - [x] Add transition matrix tests.
-- [ ] Add permission tests for owner, assigned walker, unrelated walker, and
+- [x] Add permission tests for owner, assigned walker, unrelated walker, and
       unauthenticated user.
 - [x] Add parallel accept test proving exactly one walker succeeds.
 
@@ -487,7 +489,8 @@ small realtime framework layer:
 - [x] Implement review creation.
 - [x] Prevent duplicate reviews.
 - [ ] Update or compute user ratings.
-- [ ] Add tests for review eligibility and rating updates.
+- [x] Add tests for review eligibility.
+- [ ] Add tests for rating updates after rating computation is implemented.
 
 ### Phase 6: GraphQL Contract And Relay
 
@@ -544,7 +547,7 @@ small realtime framework layer:
 ## Validation And CI
 
 - [x] Add backend unit tests for state machine logic.
-- [ ] Add backend GraphQL resolver tests for key mutations.
+- [x] Add backend GraphQL resolver tests for key mutations.
 - [x] Add an e2e test for parallel order acceptance.
 - [ ] Update deployment smoke tests once the GraphQL surface changes.
 - [ ] Add a realtime smoke test that terminates the websocket and verifies
