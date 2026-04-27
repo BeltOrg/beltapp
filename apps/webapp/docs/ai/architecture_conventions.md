@@ -10,6 +10,14 @@
   explicit.
 - Keep GraphQL subscriptions on the shared Relay/realtime infrastructure. Route
   or feature code must not create its own websocket client.
+- Relay owns server/domain state. Do not duplicate GraphQL records in Redux or
+  another app cache.
+- React Router owns URL, route params, search params, navigation, and route
+  errors.
+- React local state owns temporary UI state such as form drafts, open controls,
+  and transient validation messages.
+- Add Redux only if the app gains complex client-only state that Relay, Router,
+  and local React state cannot own cleanly.
 - Use Tailwind CSS v4 with semantic CSS variables for theme tokens.
 - Put reusable UI primitives in `src/shared/ui`; pages and feature components
   should compose those primitives instead of duplicating class strings.

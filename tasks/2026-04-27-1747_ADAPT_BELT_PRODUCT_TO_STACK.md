@@ -520,6 +520,8 @@ small realtime framework layer:
       mixing router loaders with Relay cache ownership.
 - [x] Add Tailwind CSS v4 with semantic theme tokens.
 - [x] Add reusable `src/shared/ui` primitives for common Belt UI.
+- [x] Document webapp state ownership conventions for Relay, React Router,
+      local React state, and future Redux decisions.
 - [ ] Add auth-aware routing.
 - [ ] Add role-aware navigation.
 - [x] Update branding from Anonymous Chat to Belt.
@@ -534,8 +536,8 @@ small realtime framework layer:
 ### Phase 3: Owner Flow
 
 - [x] Build dog list.
-- [ ] Build add/edit dog.
-- [x] Build create order shell.
+- [x] Build add/edit/delete dog.
+- [x] Build create order.
 - [ ] Build waiting order view.
 - [ ] Build owner active/completion views.
 
@@ -595,7 +597,7 @@ or database model.
 
 - [x] Belt replaces Anonymous Chat as the main product flow.
 - [ ] Users can log in, select roles, and access role-appropriate screens.
-- [ ] Owners can manage dogs.
+- [x] Owners can manage dogs.
 - [ ] Owners can create and cancel orders.
 - [ ] Walkers can list and accept available orders.
 - [ ] Parallel accept attempts cannot double-assign an order.

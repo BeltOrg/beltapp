@@ -185,6 +185,15 @@ function DogDetailRoute() {
   return <BeltDogDetailPage dogId={dogId} />;
 }
 
+function DogEditRoute() {
+  const { dogId } = useParams();
+  if (!dogId) {
+    return <Navigate to="/dogs" replace />;
+  }
+
+  return <BeltDogEditorPage dogId={dogId} mode="edit" />;
+}
+
 function OrdersAvailableRoute() {
   return <BeltOrdersAvailablePage />;
 }
@@ -266,6 +275,11 @@ const router = createBrowserRouter([
         path: "dogs/new",
         element: <BeltDogEditorPage mode="create" />,
         handle: { title: "Add dog" } satisfies RouteHandle,
+      },
+      {
+        path: "dogs/:dogId/edit",
+        element: <DogEditRoute />,
+        handle: { title: "Edit dog" } satisfies RouteHandle,
       },
       {
         path: "dogs/:dogId",
