@@ -298,7 +298,7 @@ After the Pages deploy finishes:
 
 Notes:
 
-- the deploy workflow already validates `/` and `/info` against the live `*.pages.dev` URL after upload
+- the deploy workflow already validates `/` and `/home` against the live `*.pages.dev` URL after upload
 - Cloudflare Pages already supports SPA serving behavior by default for projects without a top-level `404.html`, so no custom `_redirects` file is required for this app right now.
 - If the UI loads but API calls fail, first check:
   - `WEBAPP_VITE_GRAPHQL_HTTP`

@@ -5,8 +5,8 @@
 /index.html
   Cache-Control: no-cache
 
-/info
+/home
   Cache-Control: no-cache
 
-/info/
+/home/
   Cache-Control: no-cache

@@ -19,7 +19,6 @@ import {
   useRouteError,
 } from "react-router";
 
-const loadProjectReadmePage = () => import("../components/info/Info");
 const BeltDashboardPage = lazy(() =>
   import("../features/belt/pages/BeltDashboardPage").then((module) => ({
     default: module.BeltDashboardPage,
@@ -70,8 +69,6 @@ const BeltRolePage = lazy(() =>
     default: module.BeltRolePage,
   })),
 );
-const ProjectReadmePage = lazy(loadProjectReadmePage);
-
 type RouteHandle = {
   title: string;
 };
@@ -230,14 +227,6 @@ function OrderDetailRoute({
   return <BeltOrderDetailPage orderId={orderId} view={view} />;
 }
 
-function InfoRoute() {
-  return (
-    <Suspense fallback={<RoutePendingState />}>
-      <ProjectReadmePage />
-    </Suspense>
-  );
-}
-
 function NotFoundPage() {
   const location = useLocation();
 
@@ -382,11 +371,6 @@ const router = createBrowserRouter([
           </AuthenticatedRoute>
         ),
         handle: { title: "Profile" } satisfies RouteHandle,
-      },
-      {
-        path: "info",
-        element: <InfoRoute />,
-        handle: { title: "Info" } satisfies RouteHandle,
       },
       {
         path: "*",

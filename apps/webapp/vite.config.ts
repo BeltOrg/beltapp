@@ -73,12 +73,6 @@ export default defineConfig(({ mode }) => {
                     "relay-runtime",
                   ]),
               },
-              {
-                name: "markdown-vendor",
-                priority: 10,
-                test: (moduleId) =>
-                  isPackageModule(moduleId, ["react-markdown", "remark-gfm"]),
-              },
             ],
           },
         },
