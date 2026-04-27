@@ -538,15 +538,15 @@ small realtime framework layer:
 - [x] Build dog list.
 - [x] Build add/edit/delete dog.
 - [x] Build create order.
-- [ ] Build waiting order view.
-- [ ] Build owner active/completion views.
+- [x] Build waiting order view.
+- [x] Build owner active/completion views.
 
 ### Phase 4: Walker Flow
 
 - [ ] Build availability toggle or walker mode entry.
 - [x] Build available orders list.
-- [ ] Build accept order action with `ORDER_ALREADY_TAKEN` handling.
-- [ ] Build active walk actions for start and finish.
+- [x] Build accept order action with `ORDER_ALREADY_TAKEN` handling.
+- [x] Build active walk actions for start and finish.
 
 ### Phase 5: Reviews And Polish
 
@@ -598,11 +598,11 @@ or database model.
 - [x] Belt replaces Anonymous Chat as the main product flow.
 - [ ] Users can log in, select roles, and access role-appropriate screens.
 - [x] Owners can manage dogs.
-- [ ] Owners can create and cancel orders.
-- [ ] Walkers can list and accept available orders.
-- [ ] Parallel accept attempts cannot double-assign an order.
-- [ ] Assigned walkers can start and finish walks.
-- [ ] Orders follow the canonical state machine and reject invalid transitions.
+- [x] Owners can create and cancel orders.
+- [x] Walkers can list and accept available orders.
+- [x] Parallel accept attempts cannot double-assign an order.
+- [x] Assigned walkers can start and finish walks.
+- [x] Orders follow the canonical state machine and reject invalid transitions.
 - [ ] Completed orders can be reviewed.
 - [ ] Chat example code is removed from the product path.
 - [x] Webapp product code is organized into Belt feature modules.

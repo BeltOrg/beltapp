@@ -1,40 +1,349 @@
-import { graphql, useLazyLoadQuery } from "react-relay";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import {
+  graphql,
+  useFragment,
+  useLazyLoadQuery,
+  useMutation,
+} from "react-relay";
+import type { RecordProxy, RecordSourceSelectorProxy } from "relay-runtime";
+import type { BeltOrderDetailPageAcceptOrderMutation } from "./__generated__/BeltOrderDetailPageAcceptOrderMutation.graphql";
+import type { BeltOrderDetailPageCancelOrderMutation } from "./__generated__/BeltOrderDetailPageCancelOrderMutation.graphql";
+import type { BeltOrderDetailPageFinishOrderMutation } from "./__generated__/BeltOrderDetailPageFinishOrderMutation.graphql";
+import type { BeltOrderDetailPageMarkPaidMutation } from "./__generated__/BeltOrderDetailPageMarkPaidMutation.graphql";
 import type { BeltOrderDetailPageQuery } from "./__generated__/BeltOrderDetailPageQuery.graphql";
+import type {
+  BeltOrderDetailPage_orderFields$data,
+  BeltOrderDetailPage_orderFields$key,
+  OrderStatus,
+} from "./__generated__/BeltOrderDetailPage_orderFields.graphql";
+import type { BeltOrderDetailPageStartOrderMutation } from "./__generated__/BeltOrderDetailPageStartOrderMutation.graphql";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
-import { Button, Surface } from "../../../shared/ui";
+import { useCurrentMvpUser } from "../../../shared/auth/mvp-auth";
+import { getRelayErrorMessage } from "../../../shared/relay/errors";
+import { Alert, Button, Surface } from "../../../shared/ui";
 
 type BeltOrderDetailPageProps = {
   orderId: string;
   view?: "waiting" | "active" | "finish";
 };
 
+type OrderAction =
+  | "accept"
+  | "start"
+  | "finish"
+  | "cancel"
+  | "mark-paid";
+
+type OrderRecord = BeltOrderDetailPage_orderFields$data;
+
+const ORDER_DETAIL_SELECTION = graphql`
+  fragment BeltOrderDetailPage_orderFields on Order {
+    id
+    ownerId
+    walkerId
+    dogId
+    status
+    priceAmount
+    priceCurrency
+    locationAddress
+    startTime
+    endTime
+    acceptedAt
+    startedAt
+    finishedAt
+    paidAt
+  }
+`;
+
+function removeOrderFromRootList(
+  store: RecordSourceSelectorProxy,
+  fieldName: string,
+  orderId: string,
+) {
+  const root = store.getRoot();
+  const currentOrders = root.getLinkedRecords(fieldName);
+  if (!currentOrders) {
+    return;
+  }
+
+  root.setLinkedRecords(
+    currentOrders.filter((order) => order.getDataID() !== orderId),
+    fieldName,
+  );
+}
+
+function addOrderToRootList(
+  store: RecordSourceSelectorProxy,
+  fieldName: string,
+  order: RecordProxy,
+) {
+  const root = store.getRoot();
+  const currentOrders = root.getLinkedRecords(fieldName) ?? [];
+  if (currentOrders.some((item) => item.getDataID() === order.getDataID())) {
+    return;
+  }
+
+  root.setLinkedRecords([order, ...currentOrders], fieldName);
+}
+
+function isParticipant(order: OrderRecord, currentUserId: string): boolean {
+  return order.ownerId === currentUserId || order.walkerId === currentUserId;
+}
+
+function canCancelOrder(order: OrderRecord, currentUserId: string): boolean {
+  if (!isParticipant(order, currentUserId)) {
+    return false;
+  }
+
+  if (order.ownerId === currentUserId) {
+    return order.status === "CREATED" || order.status === "ACCEPTED";
+  }
+
+  return order.walkerId === currentUserId && order.status === "ACCEPTED";
+}
+
+function getAvailableActions(
+  order: OrderRecord,
+  currentUser: ReturnType<typeof useCurrentMvpUser>,
+): OrderAction[] {
+  const currentUserId = String(currentUser.id);
+  const isOwner = order.ownerId === currentUserId;
+  const isAssignedWalker = order.walkerId === currentUserId;
+  const isWalker = currentUser.roles.includes("WALKER");
+  const actions: OrderAction[] = [];
+
+  if (
+    order.status === "CREATED" &&
+    !order.walkerId &&
+    isWalker &&
+    !isOwner
+  ) {
+    actions.push("accept");
+  }
+
+  if (order.status === "ACCEPTED" && isAssignedWalker) {
+    actions.push("start");
+  }
+
+  if (order.status === "STARTED" && isAssignedWalker) {
+    actions.push("finish");
+  }
+
+  if (order.status === "FINISHED" && isOwner) {
+    actions.push("mark-paid");
+  }
+
+  if (canCancelOrder(order, currentUserId)) {
+    actions.push("cancel");
+  }
+
+  return actions;
+}
+
+function getOrderStateMessage(
+  status: OrderStatus,
+  isParticipantForCurrentUser: boolean,
+): string {
+  switch (status) {
+    case "CREATED":
+      return isParticipantForCurrentUser
+        ? "Waiting for a walker to accept this walk."
+        : "This walk is available for walkers.";
+    case "ACCEPTED":
+      return "A walker accepted this walk. The assigned walker can start it.";
+    case "STARTED":
+      return "This walk is active. The assigned walker can finish it.";
+    case "FINISHED":
+      return "The walk is finished. The owner can mark it paid.";
+    case "PAID":
+      return "This walk is paid and complete.";
+    case "CANCELLED":
+      return "This walk was cancelled.";
+    case "%future added value":
+      return "This order is in an unknown state.";
+  }
+}
+
+function getActionLabel(action: OrderAction): string {
+  switch (action) {
+    case "accept":
+      return "Accept";
+    case "start":
+      return "Start";
+    case "finish":
+      return "Finish";
+    case "cancel":
+      return "Cancel";
+    case "mark-paid":
+      return "Mark paid";
+  }
+}
+
+function getActionInFlightLabel(action: OrderAction): string {
+  switch (action) {
+    case "accept":
+      return "Accepting...";
+    case "start":
+      return "Starting...";
+    case "finish":
+      return "Finishing...";
+    case "cancel":
+      return "Cancelling...";
+    case "mark-paid":
+      return "Saving...";
+  }
+}
+
+function getNextPath(orderId: string, action: OrderAction): string {
+  switch (action) {
+    case "start":
+      return `/orders/${orderId}/active`;
+    case "finish":
+      return `/orders/${orderId}/finish`;
+    case "cancel":
+    case "mark-paid":
+    case "accept":
+      return `/orders/${orderId}`;
+  }
+}
+
 export function BeltOrderDetailPage({
   orderId,
   view,
 }: BeltOrderDetailPageProps) {
+  const navigate = useNavigate();
+  const currentUser = useCurrentMvpUser();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [activeAction, setActiveAction] = useState<OrderAction | null>(null);
   const data = useLazyLoadQuery<BeltOrderDetailPageQuery>(
     graphql`
       query BeltOrderDetailPageQuery($id: ID!) {
         order(id: $id) {
-          id
-          ownerId
-          walkerId
-          dogId
-          status
-          priceAmount
-          priceCurrency
-          locationAddress
-          startTime
-          endTime
-          acceptedAt
-          startedAt
-          finishedAt
-          paidAt
+          ...BeltOrderDetailPage_orderFields
         }
       }
     `,
     { id: orderId },
     { fetchPolicy: "store-and-network" },
+  );
+  const order = useFragment<BeltOrderDetailPage_orderFields$key>(
+    ORDER_DETAIL_SELECTION,
+    data.order,
+  );
+  const [commitAcceptOrder] =
+    useMutation<BeltOrderDetailPageAcceptOrderMutation>(graphql`
+      mutation BeltOrderDetailPageAcceptOrderMutation($id: ID!) {
+        acceptOrder(id: $id) {
+          ...BeltOrderDetailPage_orderFields
+        }
+      }
+    `);
+  const [commitStartOrder] =
+    useMutation<BeltOrderDetailPageStartOrderMutation>(graphql`
+      mutation BeltOrderDetailPageStartOrderMutation($id: ID!) {
+        startOrder(id: $id) {
+          ...BeltOrderDetailPage_orderFields
+        }
+      }
+    `);
+  const [commitFinishOrder] =
+    useMutation<BeltOrderDetailPageFinishOrderMutation>(graphql`
+      mutation BeltOrderDetailPageFinishOrderMutation($id: ID!) {
+        finishOrder(id: $id) {
+          ...BeltOrderDetailPage_orderFields
+        }
+      }
+    `);
+  const [commitCancelOrder] =
+    useMutation<BeltOrderDetailPageCancelOrderMutation>(graphql`
+      mutation BeltOrderDetailPageCancelOrderMutation(
+        $id: ID!
+        $input: CancelOrderInput
+      ) {
+        cancelOrder(id: $id, input: $input) {
+          ...BeltOrderDetailPage_orderFields
+        }
+      }
+    `);
+  const [commitMarkPaid] =
+    useMutation<BeltOrderDetailPageMarkPaidMutation>(graphql`
+      mutation BeltOrderDetailPageMarkPaidMutation($id: ID!) {
+        markOrderPaid(id: $id) {
+          ...BeltOrderDetailPage_orderFields
+        }
+      }
+    `);
+  const currentUserId = String(currentUser.id);
+  const actions = getAvailableActions(order, currentUser);
+  const isActionInFlight = activeAction !== null;
+
+  function commitAction(action: OrderAction) {
+    const variables = { id: orderId };
+    setActionError(null);
+    setActiveAction(action);
+
+    const completeAction = () => {
+      setActiveAction(null);
+      void navigate(getNextPath(orderId, action));
+    };
+    const handleError = (error: Error) => {
+      setActiveAction(null);
+      setActionError(getRelayErrorMessage(error));
+    };
+
+    switch (action) {
+      case "accept":
+        commitAcceptOrder({
+          variables,
+          updater: (store) => {
+            const acceptedOrder = store.getRootField("acceptOrder");
+            removeOrderFromRootList(store, "availableOrders", orderId);
+            if (acceptedOrder) {
+              addOrderToRootList(store, "myWalkerOrders", acceptedOrder);
+            }
+          },
+          onCompleted: completeAction,
+          onError: handleError,
+        });
+        break;
+      case "start":
+        commitStartOrder({
+          variables,
+          onCompleted: completeAction,
+          onError: handleError,
+        });
+        break;
+      case "finish":
+        commitFinishOrder({
+          variables,
+          onCompleted: completeAction,
+          onError: handleError,
+        });
+        break;
+      case "cancel":
+        commitCancelOrder({
+          variables: { ...variables, input: { reason: null } },
+          updater: (store) => {
+            removeOrderFromRootList(store, "availableOrders", orderId);
+          },
+          onCompleted: completeAction,
+          onError: handleError,
+        });
+        break;
+      case "mark-paid":
+        commitMarkPaid({
+          variables,
+          onCompleted: completeAction,
+          onError: handleError,
+        });
+        break;
+    }
+  }
+
+  const stateMessage = getOrderStateMessage(
+    order.status,
+    isParticipant(order, currentUserId),
   );
 
   return (
@@ -45,38 +354,70 @@ export function BeltOrderDetailPage({
             {view ? `${view} view` : "Order detail"}
           </p>
           <h2 className="m-0 text-xl font-semibold">
-            {data.order.locationAddress}
+            {order.locationAddress}
           </h2>
         </div>
-        <BeltStatusBadge status={data.order.status} />
+        <BeltStatusBadge status={order.status} />
       </div>
+
+      <p className="m-0 text-sm text-muted-foreground">{stateMessage}</p>
+      {actionError ? <Alert>{actionError}</Alert> : null}
+
       <dl className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
         <div>
           <dt className="text-xs text-muted-foreground">Dog</dt>
-          <dd className="m-0 font-semibold">{data.order.dogId}</dd>
+          <dd className="m-0 font-semibold">{order.dogId}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Owner</dt>
-          <dd className="m-0 font-semibold">{data.order.ownerId}</dd>
+          <dd className="m-0 font-semibold">{order.ownerId}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Walker</dt>
           <dd className="m-0 font-semibold">
-            {data.order.walkerId ?? "Unassigned"}
+            {order.walkerId ?? "Unassigned"}
           </dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Price</dt>
           <dd className="m-0 font-semibold">
-            {data.order.priceAmount} {data.order.priceCurrency}
+            {order.priceAmount} {order.priceCurrency}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Start</dt>
+          <dd className="m-0 font-semibold">
+            {new Date(order.startTime).toLocaleString()}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">End</dt>
+          <dd className="m-0 font-semibold">
+            {new Date(order.endTime).toLocaleString()}
           </dd>
         </div>
       </dl>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="primary">Accept</Button>
-        <Button>Start</Button>
-        <Button>Finish</Button>
-      </div>
+
+      {actions.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {actions.map((action) => (
+            <Button
+              key={action}
+              variant={action === "cancel" ? "secondary" : "primary"}
+              disabled={isActionInFlight}
+              onClick={() => commitAction(action)}
+            >
+              {activeAction === action
+                ? getActionInFlightLabel(action)
+                : getActionLabel(action)}
+            </Button>
+          ))}
+        </div>
+      ) : (
+        <p className="m-0 text-sm text-muted-foreground">
+          No actions are available for your current role and this order state.
+        </p>
+      )}
     </Surface>
   );
 }
