@@ -240,7 +240,7 @@ function EditDogPage({ dogId }: { dogId: string }) {
       }
     `,
     { id: dogId },
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
   const [commitUpdateDog, isUpdating] =
     useMutation<BeltDogEditorPageUpdateDogMutation>(graphql`

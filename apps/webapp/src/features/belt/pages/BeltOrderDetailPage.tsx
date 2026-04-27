@@ -34,7 +34,7 @@ export function BeltOrderDetailPage({
       }
     `,
     { id: orderId },
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
 
   return (

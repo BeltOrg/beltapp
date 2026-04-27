@@ -18,7 +18,7 @@ export function BeltDogsPage() {
       }
     `,
     {},
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
 
   return (

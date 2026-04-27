@@ -82,7 +82,9 @@ function setupSubscription(
   );
 }
 
-export function createRelayEnvironment(): Environment {
+export function createRelayEnvironment(sessionUserId?: number): Environment {
+  void sessionUserId;
+
   return new Environment({
     network: Network.create(fetchGraphQL, setupSubscription),
   });

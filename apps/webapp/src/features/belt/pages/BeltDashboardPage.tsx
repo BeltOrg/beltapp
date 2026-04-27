@@ -37,7 +37,7 @@ export function BeltDashboardPage() {
       }
     `,
     {},
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
 
   const activeOrders = [

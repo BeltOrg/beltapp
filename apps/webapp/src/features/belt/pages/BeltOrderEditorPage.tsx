@@ -130,7 +130,7 @@ export function BeltOrderEditorPage() {
       }
     `,
     {},
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
   const [commitCreateOrder, isCreating] =
     useMutation<BeltOrderEditorPageCreateOrderMutation>(graphql`

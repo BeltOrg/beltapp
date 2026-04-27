@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import {
   MVP_USERS,
   setCurrentMvpUserId,
@@ -5,12 +6,9 @@ import {
 } from "../../../shared/auth/mvp-auth";
 import { Surface, cn } from "../../../shared/ui";
 
-type BeltRolePageProps = {
-  onNavigate: (nextPath: string) => void;
-};
-
-export function BeltRolePage({ onNavigate }: BeltRolePageProps) {
+export function BeltRolePage() {
   const currentUser = useCurrentMvpUser();
+  const navigate = useNavigate();
 
   return (
     <Surface>
@@ -29,7 +27,7 @@ export function BeltRolePage({ onNavigate }: BeltRolePageProps) {
               )}
               onClick={() => {
                 setCurrentMvpUserId(user.id);
-                onNavigate("/home");
+                void navigate("/home");
               }}
             >
               <strong>{user.label}</strong>

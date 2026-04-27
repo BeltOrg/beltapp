@@ -21,7 +21,7 @@ export function BeltDogDetailPage({ dogId }: BeltDogDetailPageProps) {
       }
     `,
     { id: dogId },
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
 
   return (

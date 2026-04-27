@@ -10,7 +10,6 @@ import {
   createBrowserRouter,
   useLocation,
   useMatches,
-  useNavigate,
   useParams,
   useRouteError,
 } from "react-router";
@@ -94,13 +93,6 @@ function useRouteTitle(): string {
   return "Belt";
 }
 
-function useAppNavigate(): (nextPath: string) => void {
-  const navigate = useNavigate();
-  return (nextPath: string) => {
-    void navigate(nextPath);
-  };
-}
-
 function RoutePendingState() {
   return (
     <section
@@ -134,16 +126,12 @@ function RouterErrorBoundary() {
 
 function AppLayout() {
   const currentUser = useCurrentMvpUser();
-  const location = useLocation();
   const routeTitle = useRouteTitle();
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6">
       <Navigation />
-      <main
-        className="grid gap-4"
-        key={`${currentUser.id}:${location.pathname}`}
-      >
+      <main className="grid gap-4" key={currentUser.id}>
         <header className="grid gap-1">
           <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
             Belt
@@ -165,11 +153,11 @@ function DashboardRoute() {
 }
 
 function LoginRoute() {
-  return <BeltLoginPage onNavigate={useAppNavigate()} />;
+  return <BeltLoginPage />;
 }
 
 function RoleRoute() {
-  return <BeltRolePage onNavigate={useAppNavigate()} />;
+  return <BeltRolePage />;
 }
 
 function DogsRoute() {
@@ -199,7 +187,7 @@ function OrdersAvailableRoute() {
 }
 
 function ProfileRoute() {
-  return <BeltProfilePage onNavigate={useAppNavigate()} />;
+  return <BeltProfilePage />;
 }
 
 function OrderDetailRoute({

@@ -5,6 +5,8 @@
 - Use Relay for GraphQL data. Do not treat router loaders as a second GraphQL
   cache.
 - Start route data with Relay route components and `useLazyLoadQuery`.
+- Prefer `store-and-network` for route queries so cached content remains stable
+  while Relay refreshes data.
 - If route preloading is needed later, add a small shared Relay helper around
   `loadQuery` and `usePreloadedQuery`, and make query reference disposal
   explicit.
@@ -18,6 +20,8 @@
   and transient validation messages.
 - Add Redux only if the app gains complex client-only state that Relay, Router,
   and local React state cannot own cleanly.
+- Do not key routed page content by pathname. Remount only at true ownership
+  boundaries, such as current session or Relay environment changes.
 - Use Tailwind CSS v4 with semantic CSS variables for theme tokens.
 - Put reusable UI primitives in `src/shared/ui`; pages and feature components
   should compose those primitives instead of duplicating class strings.

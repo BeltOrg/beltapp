@@ -1,11 +1,10 @@
+import { useNavigate } from "react-router";
 import { BeltUserSwitcher } from "../components/BeltUserSwitcher";
 import { Button, Field, Surface, TextInput } from "../../../shared/ui";
 
-type BeltLoginPageProps = {
-  onNavigate: (nextPath: string) => void;
-};
+export function BeltLoginPage() {
+  const navigate = useNavigate();
 
-export function BeltLoginPage({ onNavigate }: BeltLoginPageProps) {
   return (
     <Surface framed className="max-w-xl">
       <h2 className="m-0 text-xl font-semibold">Login</h2>
@@ -13,8 +12,8 @@ export function BeltLoginPage({ onNavigate }: BeltLoginPageProps) {
         <Field label="Phone">
           <TextInput type="tel" defaultValue="+3725550001" />
         </Field>
-        <BeltUserSwitcher onNavigate={onNavigate} />
-        <Button variant="primary" onClick={() => onNavigate("/home")}>
+        <BeltUserSwitcher onNavigate={(nextPath) => void navigate(nextPath)} />
+        <Button variant="primary" onClick={() => void navigate("/home")}>
           Continue
         </Button>
       </form>

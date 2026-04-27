@@ -21,7 +21,7 @@ export function BeltOrdersAvailablePage() {
       }
     `,
     {},
-    { fetchPolicy: "network-only" },
+    { fetchPolicy: "store-and-network" },
   );
 
   return (
