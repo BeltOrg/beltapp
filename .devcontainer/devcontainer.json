@@ -1,5 +1,5 @@
 {
-  "name": "bootstraplaboratory.template.typescript_monorepo_nestjs_relay_trunk",
+  "name": "beltorg.beltapp",
   "dockerComposeFile": [
     "docker-compose.localdb.yml",
     "docker-compose.devcontainer.yml"
