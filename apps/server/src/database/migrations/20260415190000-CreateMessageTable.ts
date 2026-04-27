@@ -25,10 +25,11 @@ export class CreateMessageTable20260415190000 implements MigrationInterface {
           },
         ],
       }),
+      true,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('message');
+    await queryRunner.dropTable('message', true);
   }
 }

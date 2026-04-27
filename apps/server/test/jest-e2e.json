@@ -3,6 +3,12 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "moduleNameMapper": {
+    "^@apollo/server/plugin/landingPage/default$": "<rootDir>/mocks/apollo-landing-page-default.ts",
+    "^uuid$": "<rootDir>/mocks/uuid.ts"
+  },
+  "testTimeout": 30000,
+  "maxWorkers": 1,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }

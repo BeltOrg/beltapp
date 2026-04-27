@@ -480,7 +480,7 @@ small realtime framework layer:
 - [x] Add transition matrix tests.
 - [ ] Add permission tests for owner, assigned walker, unrelated walker, and
       unauthenticated user.
-- [ ] Add parallel accept test proving exactly one walker succeeds.
+- [x] Add parallel accept test proving exactly one walker succeeds.
 
 ### Phase 5: Reviews And Ratings
 
@@ -545,7 +545,7 @@ small realtime framework layer:
 
 - [x] Add backend unit tests for state machine logic.
 - [ ] Add backend GraphQL resolver tests for key mutations.
-- [ ] Add an e2e test for parallel order acceptance.
+- [x] Add an e2e test for parallel order acceptance.
 - [ ] Update deployment smoke tests once the GraphQL surface changes.
 - [ ] Add a realtime smoke test that terminates the websocket and verifies
       automatic resubscription without a page reload.

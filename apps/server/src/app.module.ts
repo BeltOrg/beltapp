@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { HttpException, Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 /* GRAPHQL */
@@ -34,8 +34,66 @@ type GraphqlWsExtra = {
   request?: IncomingMessage;
 };
 
+type GraphqlHttpRequestLike = {
+  headers?: Record<string, string | string[] | undefined>;
+  raw?: {
+    headers?: Record<string, string | string[] | undefined>;
+  };
+};
+
+type GraphqlContextFactoryInput = GraphqlHttpRequestLike & {
+  req?: GraphqlHttpRequestLike;
+  request?: GraphqlHttpRequestLike;
+};
+
+type DomainErrorResponse = {
+  code?: unknown;
+  message?: unknown;
+};
+
 function getGraphqlWsExtra(extra: unknown): GraphqlWsExtra {
   return extra ?? {};
+}
+
+function getGraphqlHttpHeaders({
+  headers,
+  req,
+  request,
+}: GraphqlContextFactoryInput):
+  | Record<string, string | string[] | undefined>
+  | undefined {
+  return (
+    req?.headers ??
+    req?.raw?.headers ??
+    request?.headers ??
+    request?.raw?.headers ??
+    headers
+  );
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (error instanceof HttpException) {
+    return error.getResponse();
+  }
+
+  if (typeof error !== 'object' || error === null) {
+    return null;
+  }
+
+  if ('originalError' in error) {
+    return getHttpExceptionResponse(error.originalError);
+  }
+
+  return null;
+}
+
+function getDomainErrorResponse(error: unknown): DomainErrorResponse | null {
+  const response = getHttpExceptionResponse(error);
+  if (typeof response !== 'object' || response === null) {
+    return null;
+  }
+
+  return response;
 }
 
 function getClientIp(request: IncomingMessage | undefined): string | null {
@@ -81,15 +139,26 @@ function logSubscriptionEvent(
       useFactory: (configService: ConfigService) => {
         return {
           path: configService.get<string>('GRAPHQL_PATH') ?? '/graphql',
-          context: ({
-            req,
-          }: {
-            req?: {
-              headers?: Record<string, string | string[] | undefined>;
-            };
-          }) => ({
-            currentUserId: resolveCurrentUserIdFromHeaders(req?.headers),
+          context: (contextInput: GraphqlContextFactoryInput) => ({
+            currentUserId: resolveCurrentUserIdFromHeaders(
+              getGraphqlHttpHeaders(contextInput),
+            ),
           }),
+          formatError: (formattedError, error) => {
+            const domainError = getDomainErrorResponse(error);
+            if (typeof domainError?.code !== 'string') {
+              return formattedError;
+            }
+
+            return {
+              ...formattedError,
+              extensions: {
+                ...formattedError.extensions,
+                code: domainError.code,
+                originalError: domainError,
+              },
+            };
+          },
           subscriptions: {
             'graphql-ws': {
               connectionInitWaitTimeout: 15_000,
