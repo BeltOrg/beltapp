@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltProfilePageQuery } from "./__generated__/BeltProfilePageQuery.graphql";
 import { BeltUserSwitcher } from "../components/BeltUserSwitcher";
+import { signOutCurrentMvpUser } from "../../../shared/auth/mvp-auth";
 import { Button, Surface } from "../../../shared/ui";
 
 export function BeltProfilePage() {
@@ -43,7 +44,14 @@ export function BeltProfilePage() {
       </dl>
       <BeltUserSwitcher onNavigate={(nextPath) => void navigate(nextPath)} />
       <div className="flex flex-wrap gap-2">
-        <Button>Logout</Button>
+        <Button
+          onClick={() => {
+            signOutCurrentMvpUser();
+            void navigate("/login", { replace: true });
+          }}
+        >
+          Logout
+        </Button>
       </div>
     </Surface>
   );

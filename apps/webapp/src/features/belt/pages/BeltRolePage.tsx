@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import {
   MVP_USERS,
   setCurrentMvpUserId,
+  signInCurrentMvpUser,
   useCurrentMvpUser,
 } from "../../../shared/auth/mvp-auth";
 import { Surface, cn } from "../../../shared/ui";
@@ -27,6 +28,7 @@ export function BeltRolePage() {
               )}
               onClick={() => {
                 setCurrentMvpUserId(user.id);
+                signInCurrentMvpUser();
                 void navigate("/home");
               }}
             >

@@ -1,5 +1,10 @@
-import { Suspense, lazy } from "react";
-import { useCurrentMvpUser } from "../shared/auth/mvp-auth";
+import { Suspense, lazy, type ReactNode } from "react";
+import {
+  type MvpUserRole,
+  useCurrentMvpUser,
+  useIsCurrentMvpUserAuthenticated,
+  userHasAnyRole,
+} from "../shared/auth/mvp-auth";
 import { Button } from "../shared/ui";
 import { Navigation } from "./AppNavigation";
 import {
@@ -72,6 +77,11 @@ type RouteHandle = {
   title: string;
 };
 
+type AuthenticatedRouteProps = {
+  children: ReactNode;
+  roles?: MvpUserRole[];
+};
+
 function isRouteHandle(handle: unknown): handle is RouteHandle {
   if (typeof handle !== "object" || handle === null) {
     return false;
@@ -122,6 +132,30 @@ function RouterErrorBoundary() {
       </Button>
     </section>
   );
+}
+
+function AuthenticatedRoute({ children, roles }: AuthenticatedRouteProps) {
+  const location = useLocation();
+  const currentUser = useCurrentMvpUser();
+  const isAuthenticated = useIsCurrentMvpUserAuthenticated();
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: `${location.pathname}${location.search}${location.hash}`,
+        }}
+      />
+    );
+  }
+
+  if (roles && !userHasAnyRole(currentUser, roles)) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
 }
 
 function AppLayout() {
@@ -241,7 +275,11 @@ const router = createBrowserRouter([
       },
       {
         path: "home",
-        element: <DashboardRoute />,
+        element: (
+          <AuthenticatedRoute>
+            <DashboardRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Home" } satisfies RouteHandle,
       },
       {
@@ -251,62 +289,110 @@ const router = createBrowserRouter([
       },
       {
         path: "role",
-        element: <RoleRoute />,
+        element: (
+          <AuthenticatedRoute>
+            <RoleRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Role" } satisfies RouteHandle,
       },
       {
         path: "dogs",
-        element: <DogsRoute />,
+        element: (
+          <AuthenticatedRoute roles={["OWNER"]}>
+            <DogsRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Dogs" } satisfies RouteHandle,
       },
       {
         path: "dogs/new",
-        element: <BeltDogEditorPage mode="create" />,
+        element: (
+          <AuthenticatedRoute roles={["OWNER"]}>
+            <BeltDogEditorPage mode="create" />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Add dog" } satisfies RouteHandle,
       },
       {
         path: "dogs/:dogId/edit",
-        element: <DogEditRoute />,
+        element: (
+          <AuthenticatedRoute roles={["OWNER"]}>
+            <DogEditRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Edit dog" } satisfies RouteHandle,
       },
       {
         path: "dogs/:dogId",
-        element: <DogDetailRoute />,
+        element: (
+          <AuthenticatedRoute roles={["OWNER"]}>
+            <DogDetailRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Dog profile" } satisfies RouteHandle,
       },
       {
         path: "orders/new",
-        element: <BeltOrderEditorPage />,
+        element: (
+          <AuthenticatedRoute roles={["OWNER"]}>
+            <BeltOrderEditorPage />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Create order" } satisfies RouteHandle,
       },
       {
         path: "orders/available",
-        element: <OrdersAvailableRoute />,
+        element: (
+          <AuthenticatedRoute roles={["WALKER"]}>
+            <OrdersAvailableRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Available walks" } satisfies RouteHandle,
       },
       {
         path: "orders/:orderId",
-        element: <OrderDetailRoute />,
+        element: (
+          <AuthenticatedRoute>
+            <OrderDetailRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Walk order" } satisfies RouteHandle,
       },
       {
         path: "orders/:orderId/waiting",
-        element: <OrderDetailRoute view="waiting" />,
+        element: (
+          <AuthenticatedRoute>
+            <OrderDetailRoute view="waiting" />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Waiting walk" } satisfies RouteHandle,
       },
       {
         path: "orders/:orderId/active",
-        element: <OrderDetailRoute view="active" />,
+        element: (
+          <AuthenticatedRoute>
+            <OrderDetailRoute view="active" />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Active walk" } satisfies RouteHandle,
       },
       {
         path: "orders/:orderId/finish",
-        element: <OrderDetailRoute view="finish" />,
+        element: (
+          <AuthenticatedRoute>
+            <OrderDetailRoute view="finish" />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Finish walk" } satisfies RouteHandle,
       },
       {
         path: "profile",
-        element: <ProfileRoute />,
+        element: (
+          <AuthenticatedRoute>
+            <ProfileRoute />
+          </AuthenticatedRoute>
+        ),
         handle: { title: "Profile" } satisfies RouteHandle,
       },
       {

@@ -10,6 +10,7 @@ export type MvpUser = {
 };
 
 const STORAGE_KEY = "belt:mvp-user-id";
+const AUTH_STORAGE_KEY = "belt:mvp-authenticated";
 const listeners = new Set<() => void>();
 
 export const MVP_USERS: MvpUser[] = [
@@ -52,6 +53,14 @@ function readStoredUserId(): number {
     : MVP_USERS[0].id;
 }
 
+function readStoredAuthState(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+}
+
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
 
@@ -69,6 +78,14 @@ export function getCurrentMvpUser(): MvpUser {
   return MVP_USERS.find((user) => user.id === userId) ?? MVP_USERS[0];
 }
 
+export function isCurrentMvpUserAuthenticated(): boolean {
+  return readStoredAuthState();
+}
+
+export function userHasAnyRole(user: MvpUser, roles: MvpUserRole[]): boolean {
+  return roles.some((role) => user.roles.includes(role));
+}
+
 export function setCurrentMvpUserId(userId: number): void {
   if (!MVP_USERS.some((user) => user.id === userId)) {
     return;
@@ -78,6 +95,24 @@ export function setCurrentMvpUserId(userId: number): void {
   emitChange();
 }
 
+export function signInCurrentMvpUser(): void {
+  window.localStorage.setItem(AUTH_STORAGE_KEY, "true");
+  emitChange();
+}
+
+export function signOutCurrentMvpUser(): void {
+  window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  emitChange();
+}
+
 export function useCurrentMvpUser(): MvpUser {
   return useSyncExternalStore(subscribe, getCurrentMvpUser, getCurrentMvpUser);
+}
+
+export function useIsCurrentMvpUserAuthenticated(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    isCurrentMvpUserAuthenticated,
+    isCurrentMvpUserAuthenticated,
+  );
 }

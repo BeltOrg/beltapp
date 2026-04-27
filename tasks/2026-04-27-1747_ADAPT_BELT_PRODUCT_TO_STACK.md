@@ -522,8 +522,8 @@ small realtime framework layer:
 - [x] Add reusable `src/shared/ui` primitives for common Belt UI.
 - [x] Document webapp state ownership conventions for Relay, React Router,
       local React state, and future Redux decisions.
-- [ ] Add auth-aware routing.
-- [ ] Add role-aware navigation.
+- [x] Add auth-aware routing.
+- [x] Add role-aware navigation.
 - [x] Update branding from Anonymous Chat to Belt.
 
 ### Phase 2: Auth And Profile
@@ -596,7 +596,7 @@ or database model.
 ## Completion Criteria
 
 - [x] Belt replaces Anonymous Chat as the main product flow.
-- [ ] Users can log in, select roles, and access role-appropriate screens.
+- [x] Users can log in, select roles, and access role-appropriate screens.
 - [x] Owners can manage dogs.
 - [x] Owners can create and cancel orders.
 - [x] Walkers can list and accept available orders.
