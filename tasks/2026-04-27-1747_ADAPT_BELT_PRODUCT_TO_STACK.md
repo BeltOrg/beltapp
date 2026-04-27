@@ -575,7 +575,7 @@ small realtime framework layer:
 - [ ] Update Secret Manager sync script if new backend secrets are required.
 - [ ] Update webapp env examples if API or auth wiring changes.
 - [ ] Update post-deploy smoke tests from chat operations to Belt operations.
-- [ ] Update docs that still describe Anonymous Chat as the product once Belt
+- [x] Update docs that still describe Anonymous Chat as the product once Belt
       becomes the active app.
 
 ## Open Decisions That Should Not Block The First Technical Slice
@@ -604,7 +604,7 @@ or database model.
 - [x] Assigned walkers can start and finish walks.
 - [x] Orders follow the canonical state machine and reject invalid transitions.
 - [x] Completed orders can be reviewed.
-- [ ] Chat example code is removed from the product path.
+- [x] Chat example code is removed from the product path.
 - [x] Webapp product code is organized into Belt feature modules.
 - [ ] GraphQL contract, Relay artifacts, tests, and smoke checks match the Belt
       domain.

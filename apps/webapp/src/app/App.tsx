@@ -20,7 +20,6 @@ import {
 } from "react-router";
 
 const loadProjectReadmePage = () => import("../components/info/Info");
-const Chat = lazy(() => import("../components/chat/Chat"));
 const BeltDashboardPage = lazy(() =>
   import("../features/belt/pages/BeltDashboardPage").then((module) => ({
     default: module.BeltDashboardPage,
@@ -388,11 +387,6 @@ const router = createBrowserRouter([
         path: "info",
         element: <InfoRoute />,
         handle: { title: "Info" } satisfies RouteHandle,
-      },
-      {
-        path: "chat-example",
-        element: <Chat />,
-        handle: { title: "Chat example" } satisfies RouteHandle,
       },
       {
         path: "*",
