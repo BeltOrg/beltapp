@@ -15,11 +15,38 @@ const ROLE_OPTIONS: Array<{ label: string; value: UserRole }> = [
   { label: "Walker", value: "WALKER" },
 ];
 
+function normalizeRoles(roles: ReadonlyArray<UserRole>): UserRole[] {
+  return ROLE_OPTIONS.map((role) => role.value).filter((role) =>
+    roles.includes(role),
+  );
+}
+
+function getRolesKey(roles: ReadonlyArray<UserRole>): string {
+  return normalizeRoles(roles).join("|");
+}
+
+type RolesDraft = {
+  baselineKey: string;
+  roles: UserRole[];
+};
+
 export function BeltRolePage() {
   const session = useRequiredAuthSession();
-  const [roles, setRoles] = useState<UserRole[]>([...session.user.roles]);
+  const sessionRolesKey = getRolesKey(session.user.roles);
+  const sessionRoles = normalizeRoles(session.user.roles);
+  const [draft, setDraft] = useState<RolesDraft>(() => ({
+    baselineKey: sessionRolesKey,
+    roles: sessionRoles,
+  }));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const draftRolesKey = getRolesKey(draft.roles);
+  const isDirty = draftRolesKey !== draft.baselineKey;
+  const roles = isDirty ? draft.roles : sessionRoles;
+  const showSessionRoleChange =
+    isDirty &&
+    sessionRolesKey !== draft.baselineKey &&
+    draftRolesKey !== sessionRolesKey;
   const [commitUpdateRoles] = useMutation<BeltRolePageUpdateMyRolesMutation>(
     graphql`
       mutation BeltRolePageUpdateMyRolesMutation($input: UpdateMyRolesInput!) {
@@ -35,13 +62,24 @@ export function BeltRolePage() {
   );
 
   function toggleRole(role: UserRole): void {
-    setRoles((currentRoles) => {
-      if (currentRoles.includes(role)) {
-        const nextRoles = currentRoles.filter((item) => item !== role);
-        return nextRoles.length > 0 ? nextRoles : currentRoles;
-      }
+    const nextRoles = roles.includes(role)
+      ? roles.filter((item) => item !== role)
+      : [...roles, role];
 
-      return [...currentRoles, role];
+    if (nextRoles.length === 0) {
+      return;
+    }
+
+    setDraft({
+      baselineKey: sessionRolesKey,
+      roles: normalizeRoles(nextRoles),
+    });
+  }
+
+  function applyLatestRoles(): void {
+    setDraft({
+      baselineKey: sessionRolesKey,
+      roles: sessionRoles,
     });
   }
 
@@ -55,9 +93,15 @@ export function BeltRolePage() {
         },
       },
       onCompleted: (response) => {
+        const savedRoles = response.updateMyRoles.roles.filter(isUserRole);
+        const normalizedSavedRoles = normalizeRoles(savedRoles);
         updateAuthSessionUser({
           ...response.updateMyRoles,
-          roles: response.updateMyRoles.roles.filter(isUserRole),
+          roles: normalizedSavedRoles,
+        });
+        setDraft({
+          baselineKey: getRolesKey(normalizedSavedRoles),
+          roles: normalizedSavedRoles,
         });
         setIsSaving(false);
       },
@@ -72,6 +116,19 @@ export function BeltRolePage() {
     <Surface>
       <h2 className="m-0 text-xl font-semibold">Role</h2>
       {error ? <Alert>{error}</Alert> : null}
+      {showSessionRoleChange ? (
+        <Alert className="grid gap-2" role="status" tone="info">
+          <span>
+            Roles changed in another tab. Apply the latest roles or save your
+            current selection.
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={isSaving} onClick={applyLatestRoles}>
+              Apply latest roles
+            </Button>
+          </div>
+        </Alert>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
         {ROLE_OPTIONS.map((role) => {
           const isSelected = roles.includes(role.value);
