@@ -97,6 +97,8 @@ CLOUD_RUN_CORS_ORIGIN="http://localhost:5173"
 DATABASE_URL=""
 DATABASE_URL_DIRECT=""
 REDIS_URL=""
+AUTH_JWT_ACCESS_SECRET=""
+AUTH_REFRESH_TOKEN_PEPPER=""
 ```
 
 Notes:
@@ -247,6 +249,8 @@ Fill these values in [deploy/cloudrun/config/.env](../config/.env):
 - `DATABASE_URL`
 - `DATABASE_URL_DIRECT`
 - `REDIS_URL`
+- `AUTH_JWT_ACCESS_SECRET`
+- `AUTH_REFRESH_TOKEN_PEPPER`
 
 Then run:
 
@@ -265,9 +269,11 @@ What this does:
   - `DATABASE_URL`
   - `DATABASE_URL_DIRECT`
   - `REDIS_URL`
+  - `AUTH_JWT_ACCESS_SECRET`
+  - `AUTH_REFRESH_TOKEN_PEPPER`
 - grants `roles/secretmanager.secretAccessor` to:
-  - deployer service account for all three secrets
-  - runtime service account for `DATABASE_URL` and `REDIS_URL`
+  - deployer service account for all secrets
+  - runtime service account for runtime secrets
 
 ## Step 6: Set GitHub Repository Variables
 
@@ -348,8 +354,7 @@ Then test GraphQL:
 ```bash
 curl -fsS \
   -H 'content-type: application/json' \
-  -H 'x-belt-user-id: 1' \
-  --data '{"query":"query { me { id roles isVerified } myDogs { id name } }"}' \
+  --data '{"query":"mutation($input:RegisterInput!){ register(input:$input){ accessToken user { id roles isVerified } } }","variables":{"input":{"phone":"+3725559001","password":"change-me-local-only","roles":["OWNER"]}}}' \
   "https://YOUR_RUN_APP_URL/graphql"
 ```
 

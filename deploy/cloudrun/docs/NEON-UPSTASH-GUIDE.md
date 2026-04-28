@@ -232,6 +232,8 @@ Update [deploy/cloudrun/config/.env](../config/.env):
 DATABASE_URL="..."
 DATABASE_URL_DIRECT="..."
 REDIS_URL="rediss://:PASSWORD@ENDPOINT:PORT"
+AUTH_JWT_ACCESS_SECRET="generate-a-long-random-value"
+AUTH_REFRESH_TOKEN_PEPPER="generate-a-long-random-value"
 ```
 
 If you create the least-privilege runtime user, leave `DATABASE_URL_DIRECT` in

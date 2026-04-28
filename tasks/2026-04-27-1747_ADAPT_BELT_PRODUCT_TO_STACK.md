@@ -229,36 +229,29 @@ Consistency and race-safety requirements:
 
 ### Auth And Session
 
-Authentication should use a maintained, ready-to-use auth/session library or
-framework integration instead of custom password/session plumbing. The app
-should wrap that library behind an application auth boundary so additional
-providers can be added later without rewriting domain services.
+Authentication uses Nest Passport with JWT access tokens, rotating refresh
+tokens, and local phone/password database users. Belt domain services should
+depend only on the current user resolved by the auth boundary, not on provider
+details.
 
-MVP mode does not need to solve production registration or SMS verification.
-It may use seeded users, precreated database users, or a development-only auth
-adapter that selects a known user. This keeps the first implementation focused
-on Belt's domain flows and order consistency.
-
-Real login/register/logout/account-removal behavior should be introduced
-through the selected auth library/provider setup later. The GraphQL/API layer
-should expose stable current-user semantics to the rest of the app regardless
-of whether MVP mode uses seeded users or production mode uses external auth
-providers.
+Local auth is the first provider. Later Google, Facebook, SMS, or custom OAuth
+providers should attach through provider account records without rewriting dog,
+order, or review services.
 
 Candidate operations:
 
-- `requestLoginCode(phone: String!): RequestLoginCodePayload!`
-- `verifyLoginCode(phone: String!, code: String!): AuthPayload!`
+- `register(input: RegisterInput!): AuthPayload!`
+- `login(input: LoginInput!): AuthPayload!`
+- `refreshSession(input: RefreshSessionInput!): AuthPayload!`
 - `me: User`
-- `logout: Boolean!`
+- `logout(input: LogoutInput!): Boolean!`
 - `removeMyAccount: Boolean!`
 - `updateMyRoles(roles: [UserRole!]!): User!`
 
 Requirements:
 
-- Use an established auth/session package where possible.
+- Use Passport strategies for auth provider integration.
 - Keep provider-specific auth code outside business services.
-- Support a simple MVP auth mode using seeded/precreated users.
 - Add GraphQL context current-user support.
 - Add guards for authenticated operations.
 - Keep tokens/session mechanics compatible with browser now and mobile later.
@@ -452,15 +445,18 @@ small realtime framework layer:
 
 ### Phase 2: Auth Foundation
 
-- [ ] Choose the auth/session library integration point.
+- [x] Choose the auth/session library integration point.
 - [x] Add an application auth boundary so providers can be swapped later.
-- [x] Add MVP auth mode using seeded/precreated users or a dev-only selector.
-- [ ] Add phone-login API surface if it is still useful for the chosen library.
-- [ ] Add dev/mock verification provider only if needed by MVP mode.
-- [ ] Add session/token issuance and validation.
+- [x] Remove MVP user/header auth from the server and webapp runtime path.
+- [x] Add local phone/password registration and login backed by database users.
+- [ ] Add phone-code login API surface if it becomes useful after local auth.
+- [ ] Add dev/mock verification provider only if needed for local development.
+- [x] Add JWT access token issuance and validation.
+- [x] Add rotating refresh token issuance, validation, and revocation.
 - [x] Add current user extraction to GraphQL context.
 - [x] Add guards/decorators for authenticated resolvers.
-- [ ] Add logout and account-removal entrypoints at the application boundary.
+- [x] Add logout entrypoint at the application boundary.
+- [ ] Add account-removal entrypoint at the application boundary.
 - [x] Add tests for authenticated and unauthenticated access.
 
 ### Phase 3: Dog Management
@@ -571,9 +567,9 @@ small realtime framework layer:
 
 ## Deployment And Operations Updates
 
-- [ ] Update Cloud Run env examples if auth/session secrets are introduced.
-- [ ] Update Secret Manager sync script if new backend secrets are required.
-- [ ] Update webapp env examples if API or auth wiring changes.
+- [x] Update Cloud Run env examples if auth/session secrets are introduced.
+- [x] Update Secret Manager sync script if new backend secrets are required.
+- [x] Update webapp auth wiring for bearer tokens and refresh sessions.
 - [x] Update post-deploy smoke tests from chat operations to Belt operations.
 - [x] Update docs that still describe Anonymous Chat as the product once Belt
       becomes the active app.

@@ -1,15 +1,15 @@
 import { Suspense, useMemo } from "react";
 import { RelayEnvironmentProvider } from "react-relay";
-import { useCurrentMvpUser } from "../shared/auth/mvp-auth";
+import { useAuthSession } from "../shared/auth/session";
 import { createRelayEnvironment } from "../shared/relay/environment";
 import { PendingState } from "../shared/ui";
 import App from "./App";
 
 export function AppProviders() {
-  const currentUser = useCurrentMvpUser();
+  const session = useAuthSession();
   const environment = useMemo(
-    () => createRelayEnvironment(currentUser.id),
-    [currentUser.id],
+    () => createRelayEnvironment(session?.user.id),
+    [session?.user.id],
   );
 
   return (

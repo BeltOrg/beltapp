@@ -393,6 +393,8 @@ You need these secrets:
 - `DATABASE_URL`
 - `DATABASE_URL_DIRECT`
 - `REDIS_URL`
+- `AUTH_JWT_ACCESS_SECRET`
+- `AUTH_REFRESH_TOKEN_PEPPER`
 
 Console path:
 
@@ -412,6 +414,8 @@ Steps:
 5. Repeat for:
    - `DATABASE_URL_DIRECT`
    - `REDIS_URL`
+   - `AUTH_JWT_ACCESS_SECRET`
+   - `AUTH_REFRESH_TOKEN_PEPPER`
 
 Use automatic replication unless you have a specific regional requirement.
 
@@ -430,11 +434,15 @@ The deployer service account needs access to:
 - `DATABASE_URL`
 - `DATABASE_URL_DIRECT`
 - `REDIS_URL`
+- `AUTH_JWT_ACCESS_SECRET`
+- `AUTH_REFRESH_TOKEN_PEPPER`
 
 The runtime service account needs access to:
 
 - `DATABASE_URL`
 - `REDIS_URL`
+- `AUTH_JWT_ACCESS_SECRET`
+- `AUTH_REFRESH_TOKEN_PEPPER`
 
 Console path:
 
@@ -451,7 +459,7 @@ Steps for each secret:
 4. Add principal and role:
    - principal: deployer service account
    - role: `Secret Manager Secret Accessor`
-5. For `DATABASE_URL` and `REDIS_URL`, also add:
+5. For runtime secrets, also add:
    - principal: runtime service account
    - role: `Secret Manager Secret Accessor`
 6. Save.
@@ -527,7 +535,7 @@ You are done with the manual Google Cloud side when all of these are true:
 - deployer and runtime service accounts exist
 - Workload Identity pool and GitHub OIDC provider exist
 - GitHub repo can impersonate the deployer service account
-- three Secret Manager secrets exist
+- five Secret Manager secrets exist
 - deployer and runtime secret access is configured correctly
 
 At that point, return to:

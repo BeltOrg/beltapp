@@ -21,7 +21,7 @@ import {
   createLoggedDataSource,
   getDatabaseConfig,
 } from './config/database.config';
-import { resolveCurrentUserIdFromHeaders } from './modules/auth/auth-context';
+import { GraphqlRequestLike } from './modules/auth/auth-context';
 import {
   isGraphqlSubscriptionLoggingEnabled,
   logStructuredEvent,
@@ -69,6 +69,18 @@ function getGraphqlHttpHeaders({
     request?.raw?.headers ??
     headers
   );
+}
+
+function getGraphqlHttpRequest(
+  contextInput: GraphqlContextFactoryInput,
+): GraphqlRequestLike {
+  const request = contextInput.req ?? contextInput.request;
+  const rawRequest = request?.raw;
+
+  return {
+    ...(rawRequest ?? request ?? {}),
+    headers: getGraphqlHttpHeaders(contextInput) ?? {},
+  };
 }
 
 function getHttpExceptionResponse(error: unknown): unknown {
@@ -140,9 +152,7 @@ function logSubscriptionEvent(
         return {
           path: configService.get<string>('GRAPHQL_PATH') ?? '/graphql',
           context: (contextInput: GraphqlContextFactoryInput) => ({
-            currentUserId: resolveCurrentUserIdFromHeaders(
-              getGraphqlHttpHeaders(contextInput),
-            ),
+            req: getGraphqlHttpRequest(contextInput),
           }),
           formatError: (formattedError, error) => {
             const domainError = getDomainErrorResponse(error);

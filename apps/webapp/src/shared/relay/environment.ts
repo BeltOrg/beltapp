@@ -10,58 +10,89 @@ import {
 } from "relay-runtime";
 import type { RelayObservable } from "relay-runtime/lib/network/RelayObservable";
 import { type FormattedExecutionResult, type Sink } from "graphql-ws";
-import { getCurrentMvpUserId } from "../auth/mvp-auth";
+import { refreshStoredAuthSession } from "../auth/auth-api";
+import { getAccessToken } from "../auth/session";
+import { HTTP_ENDPOINT, WS_ENDPOINT } from "../graphql/endpoints";
 import { createRealtimeGraphqlWsClient } from "../realtime/realtime-connection";
 
-const HTTP_CONFIG = import.meta.env.VITE_GRAPHQL_HTTP!;
-const WS_CONFIG = import.meta.env.VITE_GRAPHQL_WS!;
+const wsClient = createRealtimeGraphqlWsClient(WS_ENDPOINT, () => {
+  const accessToken = getAccessToken();
+  const connectionParams: Record<string, string> = {};
 
-function isAbsoluteUrl(value: string): boolean {
-  return /^[a-z][a-z\d+\-.]*:\/\//i.test(value);
+  if (accessToken) {
+    connectionParams.authorization = `Bearer ${accessToken}`;
+  }
+
+  return connectionParams;
+});
+
+function getGraphqlErrorCode(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+
+  const extensions = (error as { extensions?: unknown }).extensions;
+  if (typeof extensions !== "object" || extensions === null) {
+    return null;
+  }
+
+  const originalError = (extensions as { originalError?: unknown })
+    .originalError;
+  if (
+    typeof originalError === "object" &&
+    originalError !== null &&
+    typeof (originalError as { code?: unknown }).code === "string"
+  ) {
+    return (originalError as { code: string }).code;
+  }
+
+  const code = (extensions as { code?: unknown }).code;
+  return typeof code === "string" ? code : null;
 }
 
-function resolveHttpEndpoint(endpoint: string): string {
-  if (isAbsoluteUrl(endpoint)) {
-    return endpoint;
-  }
-
-  if (import.meta.env.DEV) {
-    return endpoint;
-  }
-
-  return new URL(endpoint, window.location.origin).toString();
+function hasAuthRequiredError(response: GraphQLResponse): boolean {
+  const errors = (response as { errors?: unknown[] }).errors ?? [];
+  return errors.some(
+    (error: unknown) => getGraphqlErrorCode(error) === "AUTH_REQUIRED",
+  );
 }
 
-function resolveWsEndpoint(endpoint: string): string {
-  if (isAbsoluteUrl(endpoint)) {
-    return endpoint;
+async function fetchGraphqlOnce(
+  request: RequestParameters,
+  variables: Variables,
+): Promise<GraphQLResponse> {
+  const accessToken = getAccessToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (accessToken) {
+    headers.authorization = `Bearer ${accessToken}`;
   }
 
-  if (import.meta.env.DEV) {
-    return endpoint;
-  }
-
-  const wsOrigin = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
-  return new URL(endpoint, wsOrigin).toString();
-}
-
-export const HTTP_ENDPOINT = resolveHttpEndpoint(HTTP_CONFIG);
-const WS_ENDPOINT = resolveWsEndpoint(WS_CONFIG);
-const wsClient = createRealtimeGraphqlWsClient(WS_ENDPOINT);
-
-const fetchGraphQL: FetchFunction = async (request, variables) => {
   const resp = await fetch(HTTP_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-belt-user-id": String(getCurrentMvpUserId()),
-    },
+    headers,
     body: JSON.stringify({ query: request.text, variables }),
   });
   if (!resp.ok) {
     throw new Error("Response failed.");
   }
   return await resp.json();
+}
+
+const fetchGraphQL: FetchFunction = async (request, variables) => {
+  const response = await fetchGraphqlOnce(request, variables);
+  if (!hasAuthRequiredError(response)) {
+    return response;
+  }
+
+  const refreshedSession = await refreshStoredAuthSession();
+  if (!refreshedSession) {
+    return response;
+  }
+
+  return fetchGraphqlOnce(request, variables);
 };
 
 function setupSubscription(
@@ -82,8 +113,8 @@ function setupSubscription(
   );
 }
 
-export function createRelayEnvironment(sessionUserId?: number): Environment {
-  void sessionUserId;
+export function createRelayEnvironment(sessionKey?: string): Environment {
+  void sessionKey;
 
   return new Environment({
     network: Network.create(fetchGraphQL, setupSubscription),

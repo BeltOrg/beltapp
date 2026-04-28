@@ -58,6 +58,9 @@ export RUNTIME_SERVICE_ACCOUNT_EMAIL="cloud-run-runtime@${PROJECT_ID}.iam.gservi
 
 export DATABASE_URL="replace-with-neon-pooled-url"
 export DATABASE_URL_DIRECT="replace-with-neon-direct-url"
+export REDIS_URL="rediss://:PASSWORD@HOST:PORT"
+export AUTH_JWT_ACCESS_SECRET="$(openssl rand -base64 48)"
+export AUTH_REFRESH_TOKEN_PEPPER="$(openssl rand -base64 48)"
 
 bash deploy/cloudrun/scripts/sync-secrets.sh
 ```

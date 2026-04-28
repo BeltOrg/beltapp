@@ -3,9 +3,11 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { JwtService } from '@nestjs/jwt';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { getMigrationDataSourceOptions } from '../src/config/database.config';
+import { getAuthTokenConfig } from '../src/modules/auth/auth.config';
 
 export type GraphqlResponse<TData> = {
   data?: TData;
@@ -42,6 +44,10 @@ async function ensureE2eDatabase(): Promise<void> {
 }
 
 export async function createE2eApp(): Promise<NestFastifyApplication> {
+  process.env.AUTH_JWT_ACCESS_SECRET ??= 'test-access-secret';
+  process.env.AUTH_REFRESH_TOKEN_PEPPER ??= 'test-refresh-pepper';
+  process.env.AUTH_JWT_ACCESS_TTL_SECONDS ??= '900';
+  process.env.AUTH_REFRESH_TOKEN_TTL_SECONDS ??= '2592000';
   process.env.DATABASE_SYNCHRONIZE = 'false';
   process.env.DATABASE_SSL ??= 'false';
   process.env.PUBSUB_DRIVER ??= 'memory';
@@ -70,9 +76,11 @@ export async function graphqlRequest<TData>(
     'content-type': 'application/json',
   };
 
-  if (options.userId !== undefined) {
-    headers['x-belt-user-id'] =
-      options.userId === null ? '0' : String(options.userId);
+  if (options.userId !== undefined && options.userId !== null) {
+    headers.authorization = `Bearer ${createTestAccessToken(
+      app,
+      options.userId,
+    )}`;
   }
 
   const response = await app.inject({
@@ -88,4 +96,22 @@ export async function graphqlRequest<TData>(
   expect(response.statusCode).toBe(200);
 
   return response.json();
+}
+
+export function createTestAccessToken(
+  app: NestFastifyApplication,
+  userId: number,
+): string {
+  const jwtService = app.get(JwtService);
+  const config = getAuthTokenConfig();
+
+  return jwtService.sign(
+    { sub: String(userId) },
+    {
+      secret: config.accessTokenSecret,
+      expiresIn: config.accessTokenTtlSeconds,
+      issuer: config.issuer,
+      audience: config.audience,
+    },
+  );
 }

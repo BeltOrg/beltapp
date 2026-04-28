@@ -292,7 +292,7 @@ After the Pages deploy finishes:
 
 1. Open the `*.pages.dev` URL.
 2. Confirm the app loads.
-3. Confirm login with one of the MVP users.
+3. Register or log in with a local phone/password account.
 4. Confirm the home/profile/dogs views can fetch Belt data from the backend.
 5. Create a test walk order and cancel it.
 

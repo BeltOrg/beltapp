@@ -1,3 +1,10 @@
+type AuthPayload {
+  accessToken: String!
+  expiresIn: Int!
+  refreshToken: String!
+  user: User!
+}
+
 input CancelOrderInput {
   reason: String
 }
@@ -53,6 +60,15 @@ enum DogSize {
   SMALL
 }
 
+input LoginInput {
+  password: String!
+  phone: String!
+}
+
+input LogoutInput {
+  refreshToken: String!
+}
+
 """chat message"""
 type Message {
   author: String
@@ -69,8 +85,11 @@ type Mutation {
   createOrderReview(input: CreateReviewInput!, orderId: ID!): Review!
   deleteDog(id: ID!): Boolean!
   finishOrder(id: ID!): Order!
-  logout: Boolean!
+  login(input: LoginInput!): AuthPayload!
+  logout(input: LogoutInput!): Boolean!
   markOrderPaid(id: ID!): Order!
+  refreshSession(input: RefreshSessionInput!): AuthPayload!
+  register(input: RegisterInput!): AuthPayload!
   removeMessage(id: Float!): Boolean!
   startOrder(id: ID!): Order!
   updateDog(id: ID!, input: UpdateDogInput!): Dog!
@@ -124,6 +143,16 @@ type Query {
   myReviews: [Review!]!
   myWalkerOrders(statuses: [OrderStatus!]): [Order!]!
   order(id: ID!): Order!
+}
+
+input RefreshSessionInput {
+  refreshToken: String!
+}
+
+input RegisterInput {
+  password: String!
+  phone: String!
+  roles: [UserRole!]!
 }
 
 type Review {

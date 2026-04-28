@@ -11,18 +11,50 @@ if (!serviceUrl || !healthUrl || !graphqlUrl) {
   process.exit(1);
 }
 
-const ownerUserId = parseUserId(
-  process.env.BELT_SMOKE_OWNER_USER_ID ?? "1",
-  "BELT_SMOKE_OWNER_USER_ID",
-);
-const walkerUserId = parseUserId(
-  process.env.BELT_SMOKE_WALKER_USER_ID ?? "2",
-  "BELT_SMOKE_WALKER_USER_ID",
-);
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const uniqueId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const smokeLabel = `cloud-run-smoke-${uniqueId}`;
+const smokePhoneSuffix = String(Date.now()).slice(-8);
+const ownerCredentials = {
+  phone: process.env.BELT_SMOKE_OWNER_PHONE ?? `+37259${smokePhoneSuffix}01`,
+  password: process.env.BELT_SMOKE_OWNER_PASSWORD ?? `Belt smoke ${uniqueId}!`,
+  roles: ["OWNER"],
+};
+const walkerCredentials = {
+  phone: process.env.BELT_SMOKE_WALKER_PHONE ?? `+37259${smokePhoneSuffix}02`,
+  password: process.env.BELT_SMOKE_WALKER_PASSWORD ?? `Belt smoke ${uniqueId}!`,
+  roles: ["WALKER"],
+};
+
+const registerMutation = `
+  mutation SmokeRegister($input: RegisterInput!) {
+    register(input: $input) {
+      accessToken
+      refreshToken
+      user {
+        id
+        isVerified
+        phone
+        roles
+      }
+    }
+  }
+`;
+
+const loginMutation = `
+  mutation SmokeLogin($input: LoginInput!) {
+    login(input: $input) {
+      accessToken
+      refreshToken
+      user {
+        id
+        isVerified
+        phone
+        roles
+      }
+    }
+  }
+`;
 
 const meQuery = `
   query SmokeMe {
@@ -100,16 +132,6 @@ const ownerOrdersQuery = `
   }
 `;
 
-function parseUserId(value, envName) {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new Error(`${envName} must be a positive integer.`);
-  }
-
-  return parsed;
-}
-
 function requireRecord(value, label) {
   if (typeof value !== "object" || value === null) {
     throw new Error(`Expected ${label} to be an object.`);
@@ -156,13 +178,39 @@ async function waitForHealthyService() {
   );
 }
 
-async function postGraphql(query, variables = {}, userId = ownerUserId) {
+function getGraphqlErrorCodes(errors) {
+  if (!Array.isArray(errors)) {
+    return [];
+  }
+
+  return errors.map((error) => {
+    const originalCode = error?.extensions?.originalError?.code;
+    if (typeof originalCode === "string") {
+      return originalCode;
+    }
+
+    const extensionCode = error?.extensions?.code;
+    return typeof extensionCode === "string" ? extensionCode : "UNKNOWN";
+  });
+}
+
+async function postGraphql(
+  query,
+  variables = {},
+  accessToken,
+  { allowErrors = false } = {},
+) {
+  const headers = {
+    "content-type": "application/json",
+  };
+
+  if (accessToken) {
+    headers.authorization = `Bearer ${accessToken}`;
+  }
+
   const response = await fetch(graphqlUrl, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-belt-user-id": String(userId),
-    },
+    headers,
     body: JSON.stringify({ query, variables }),
     signal: AbortSignal.timeout(15_000),
   });
@@ -186,11 +234,43 @@ async function postGraphql(query, variables = {}, userId = ownerUserId) {
     );
   }
 
-  if (json.errors) {
+  if (json.errors && !allowErrors) {
     throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
   }
 
-  return json.data;
+  return json;
+}
+
+async function registerOrLogin(credentials, label) {
+  const registerResult = await postGraphql(
+    registerMutation,
+    {
+      input: credentials,
+    },
+    null,
+    { allowErrors: true },
+  );
+  const registerErrorCodes = getGraphqlErrorCodes(registerResult.errors);
+
+  if (!registerResult.errors) {
+    console.log(`[smoke] Registered ${label} smoke user.`);
+    return requireRecord(registerResult.data?.register, `${label} register`);
+  }
+
+  if (!registerErrorCodes.includes("AUTH_ACCOUNT_EXISTS")) {
+    throw new Error(
+      `${label} registration failed: ${JSON.stringify(registerResult.errors)}`,
+    );
+  }
+
+  const loginResult = await postGraphql(loginMutation, {
+    input: {
+      phone: credentials.phone,
+      password: credentials.password,
+    },
+  });
+  console.log(`[smoke] Logged in existing ${label} smoke user.`);
+  return requireRecord(loginResult.data?.login, `${label} login`);
 }
 
 function appendStepSummary(lines) {
@@ -207,14 +287,15 @@ async function main() {
 
   let createdOrderId;
   let createdOrderCancelled = false;
+  let ownerSessionForCleanup;
 
   try {
     await runBeltSmoke();
     createdOrderCancelled = true;
   } finally {
-    if (createdOrderId && !createdOrderCancelled) {
+    if (createdOrderId && !createdOrderCancelled && ownerSessionForCleanup) {
       try {
-        await cancelSmokeOrder(createdOrderId);
+        await cancelSmokeOrder(createdOrderId, ownerSessionForCleanup);
         console.log(
           `[smoke] Cancelled order ${createdOrderId} during failure cleanup.`,
         );
@@ -229,14 +310,21 @@ async function main() {
   }
 
   async function runBeltSmoke() {
-    const ownerData = await postGraphql(meQuery, {}, ownerUserId);
+    const ownerSession = await registerOrLogin(ownerCredentials, "owner");
+    ownerSessionForCleanup = ownerSession;
+    const walkerSession = await registerOrLogin(walkerCredentials, "walker");
+
+    const ownerData = (await postGraphql(meQuery, {}, ownerSession.accessToken))
+      .data;
     const owner = requireRecord(ownerData?.me, "owner me");
-    requireRole(owner, "OWNER", `User ${ownerUserId}`);
+    requireRole(owner, "OWNER", `User ${owner.id}`);
     console.log(`[smoke] Owner user ${owner.id} is available.`);
 
-    const walkerData = await postGraphql(meQuery, {}, walkerUserId);
+    const walkerData = (
+      await postGraphql(meQuery, {}, walkerSession.accessToken)
+    ).data;
     const walker = requireRecord(walkerData?.me, "walker me");
-    requireRole(walker, "WALKER", `User ${walkerUserId}`);
+    requireRole(walker, "WALKER", `User ${walker.id}`);
     console.log(`[smoke] Walker user ${walker.id} is available.`);
 
     const dogName = `Cloud Run smoke dog ${smokeLabel}`;
@@ -250,17 +338,19 @@ async function main() {
           notes: "Created by deploy smoke validation.",
         },
       },
-      ownerUserId,
-    );
+      ownerSession.accessToken,
+    ).then((result) => result.data);
     const dog = requireRecord(dogData?.createDog, "created dog");
 
-    if (String(dog.ownerId) !== String(ownerUserId) || dog.name !== dogName) {
+    if (String(dog.ownerId) !== String(owner.id) || dog.name !== dogName) {
       throw new Error(`Unexpected dog response: ${JSON.stringify(dogData)}`);
     }
 
     console.log(`[smoke] Dog creation succeeded with id ${dog.id}.`);
 
-    const dogsData = await postGraphql(myDogsQuery, {}, ownerUserId);
+    const dogsData = (
+      await postGraphql(myDogsQuery, {}, ownerSession.accessToken)
+    ).data;
     const dogs = dogsData?.myDogs;
     if (
       !Array.isArray(dogs) ||
@@ -288,8 +378,8 @@ async function main() {
           estimatedDurationMinutes: 60,
         },
       },
-      ownerUserId,
-    );
+      ownerSession.accessToken,
+    ).then((result) => result.data);
     const order = requireRecord(orderData?.createOrder, "created order");
 
     if (order.status !== "CREATED" || String(order.dogId) !== String(dog.id)) {
@@ -304,8 +394,8 @@ async function main() {
     const availableData = await postGraphql(
       availableOrdersQuery,
       {},
-      walkerUserId,
-    );
+      walkerSession.accessToken,
+    ).then((result) => result.data);
     const availableOrders = availableData?.availableOrders;
     if (
       !Array.isArray(availableOrders) ||
@@ -322,7 +412,7 @@ async function main() {
 
     console.log("[smoke] Available-order visibility succeeded.");
 
-    const cancelData = await cancelSmokeOrder(order.id);
+    const cancelData = await cancelSmokeOrder(order.id, ownerSession);
     const cancelledOrder = requireRecord(
       cancelData?.cancelOrder,
       "cancelled order",
@@ -340,8 +430,8 @@ async function main() {
     const ownerOrdersData = await postGraphql(
       ownerOrdersQuery,
       { statuses: ["CANCELLED"] },
-      ownerUserId,
-    );
+      ownerSession.accessToken,
+    ).then((result) => result.data);
     const ownerOrders = ownerOrdersData?.myOwnerOrders;
     if (
       !Array.isArray(ownerOrders) ||
@@ -371,8 +461,8 @@ async function main() {
   }
 }
 
-async function cancelSmokeOrder(orderId) {
-  return postGraphql(
+async function cancelSmokeOrder(orderId, ownerSession) {
+  const result = await postGraphql(
     cancelOrderMutation,
     {
       id: orderId,
@@ -380,8 +470,9 @@ async function cancelSmokeOrder(orderId) {
         reason: `Smoke validation cleanup ${smokeLabel}`,
       },
     },
-    ownerUserId,
+    ownerSession.accessToken,
   );
+  return result.data;
 }
 
 main().catch((error) => {

@@ -257,6 +257,20 @@ export function expectGraphqlErrorCodes<TData>(
 export async function resetBeltFixture(dataSource: DataSource): Promise<void> {
   await dataSource.query(
     `
+      DELETE FROM auth_refresh_token
+      WHERE user_id = ANY($1::int[])
+    `,
+    [TEST_USER_IDS],
+  );
+  await dataSource.query(
+    `
+      DELETE FROM auth_account
+      WHERE user_id = ANY($1::int[])
+    `,
+    [TEST_USER_IDS],
+  );
+  await dataSource.query(
+    `
       DELETE FROM order_review
       WHERE reviewer_id = ANY($1::int[])
         OR reviewee_id = ANY($1::int[])

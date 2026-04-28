@@ -20,7 +20,10 @@ import type {
 } from "./__generated__/BeltOrderDetailPage_orderFields.graphql";
 import type { BeltOrderDetailPageStartOrderMutation } from "./__generated__/BeltOrderDetailPageStartOrderMutation.graphql";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
-import { useCurrentMvpUser } from "../../../shared/auth/mvp-auth";
+import {
+  type AuthenticatedUser,
+  useRequiredAuthSession,
+} from "../../../shared/auth/session";
 import { getRelayErrorMessage } from "../../../shared/relay/errors";
 import {
   Alert,
@@ -124,7 +127,7 @@ function canCancelOrder(order: OrderRecord, currentUserId: string): boolean {
 
 function getAvailableActions(
   order: OrderRecord,
-  currentUser: ReturnType<typeof useCurrentMvpUser>,
+  currentUser: AuthenticatedUser,
 ): OrderAction[] {
   const currentUserId = String(currentUser.id);
   const isOwner = order.ownerId === currentUserId;
@@ -227,7 +230,7 @@ export function BeltOrderDetailPage({
   view,
 }: BeltOrderDetailPageProps) {
   const navigate = useNavigate();
-  const currentUser = useCurrentMvpUser();
+  const { user: currentUser } = useRequiredAuthSession();
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<OrderAction | null>(null);
   const data = useLazyLoadQuery<BeltOrderDetailPageQuery>(

@@ -1,10 +1,9 @@
 import { Suspense, lazy, type ReactNode } from "react";
 import {
-  type MvpUserRole,
-  useCurrentMvpUser,
-  useIsCurrentMvpUserAuthenticated,
+  type UserRole,
+  useAuthSession,
   userHasAnyRole,
-} from "../shared/auth/mvp-auth";
+} from "../shared/auth/session";
 import { getRelayErrorMessage } from "../shared/relay/errors";
 import { ErrorState, PendingState } from "../shared/ui";
 import { Navigation } from "./AppNavigation";
@@ -75,7 +74,7 @@ type RouteHandle = {
 
 type AuthenticatedRouteProps = {
   children: ReactNode;
-  roles?: MvpUserRole[];
+  roles?: UserRole[];
 };
 
 function isRouteHandle(handle: unknown): handle is RouteHandle {
@@ -126,10 +125,9 @@ function RouterErrorBoundary() {
 
 function AuthenticatedRoute({ children, roles }: AuthenticatedRouteProps) {
   const location = useLocation();
-  const currentUser = useCurrentMvpUser();
-  const isAuthenticated = useIsCurrentMvpUserAuthenticated();
+  const session = useAuthSession();
 
-  if (!isAuthenticated) {
+  if (!session) {
     return (
       <Navigate
         to="/login"
@@ -141,7 +139,7 @@ function AuthenticatedRoute({ children, roles }: AuthenticatedRouteProps) {
     );
   }
 
-  if (roles && !userHasAnyRole(currentUser, roles)) {
+  if (roles && !userHasAnyRole(session.user, roles)) {
     return <Navigate to="/home" replace />;
   }
 
@@ -149,13 +147,13 @@ function AuthenticatedRoute({ children, roles }: AuthenticatedRouteProps) {
 }
 
 function AppLayout() {
-  const currentUser = useCurrentMvpUser();
+  const session = useAuthSession();
   const routeTitle = useRouteTitle();
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6">
       <Navigation />
-      <main className="grid gap-4" key={currentUser.id}>
+      <main className="grid gap-4" key={session?.user.id ?? "anonymous"}>
         <header className="grid gap-1">
           <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
             Belt

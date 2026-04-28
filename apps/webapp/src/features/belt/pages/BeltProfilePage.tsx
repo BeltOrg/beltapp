@@ -1,12 +1,13 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltProfilePageQuery } from "./__generated__/BeltProfilePageQuery.graphql";
-import { BeltUserSwitcher } from "../components/BeltUserSwitcher";
-import { signOutCurrentMvpUser } from "../../../shared/auth/mvp-auth";
+import { logoutCurrentSession } from "../../../shared/auth/auth-api";
 import { Button, Surface } from "../../../shared/ui";
 
 export function BeltProfilePage() {
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const data = useLazyLoadQuery<BeltProfilePageQuery>(
     graphql`
       query BeltProfilePageQuery {
@@ -42,15 +43,17 @@ export function BeltProfilePage() {
           </dd>
         </div>
       </dl>
-      <BeltUserSwitcher onNavigate={(nextPath) => void navigate(nextPath)} />
       <div className="flex flex-wrap gap-2">
         <Button
+          disabled={isLoggingOut}
           onClick={() => {
-            signOutCurrentMvpUser();
-            void navigate("/login", { replace: true });
+            setIsLoggingOut(true);
+            void logoutCurrentSession().finally(() => {
+              void navigate("/login", { replace: true });
+            });
           }}
         >
-          Logout
+          {isLoggingOut ? "Logging out..." : "Logout"}
         </Button>
       </div>
     </Surface>
