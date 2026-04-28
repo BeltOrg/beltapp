@@ -1,8 +1,15 @@
+import { useCallback } from "react";
 import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
+import type { RecordSourceSelectorProxy } from "relay-runtime";
 import type { BeltDashboardPageQuery } from "./__generated__/BeltDashboardPageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
+import { useBeltEventsSubscription } from "../realtime/useBeltEventsSubscription";
+import {
+  prependRecordToRootListIfMissing,
+  replaceRecordInRootList,
+} from "../../../shared/relay/store";
 import { Button, Surface } from "../../../shared/ui";
 
 export function BeltDashboardPage() {
@@ -39,6 +46,29 @@ export function BeltDashboardPage() {
     {},
     { fetchPolicy: "store-and-network" },
   );
+  const currentUserId = data.me.id;
+  const updateDashboardOrders = useCallback(
+    (store: RecordSourceSelectorProxy) => {
+      const event = store.getRootField("beltEvent");
+      const order = event?.getLinkedRecord("order");
+      if (!event || !order) {
+        return;
+      }
+
+      if (order.getValue("ownerId") === currentUserId) {
+        replaceRecordInRootList(store, "myOwnerOrders", order);
+        prependRecordToRootListIfMissing(store, "myOwnerOrders", order);
+      }
+
+      if (order.getValue("walkerId") === currentUserId) {
+        replaceRecordInRootList(store, "myWalkerOrders", order);
+        prependRecordToRootListIfMissing(store, "myWalkerOrders", order);
+      }
+    },
+    [currentUserId],
+  );
+
+  useBeltEventsSubscription({ updater: updateDashboardOrders });
 
   const activeOrders = [
     ...data.myOwnerOrders.map((order) => ({ ...order, side: "Owner" })),

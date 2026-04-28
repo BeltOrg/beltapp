@@ -290,6 +290,7 @@ Routes: `/login`, wildcard route
       auth-session cache updates.
 - [ ] Add owner dog event handling for dashboard, dog list, dog detail, dog
       editor, and create-walk selector flows.
+- [x] Add dashboard order event handling for owner and walker active walks.
 - [x] Add available-order event handling for walker discovery.
 - [x] Add current-order event handling for all order detail views.
 - [ ] Add review event handling for order detail and rating updates.
