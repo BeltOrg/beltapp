@@ -2,9 +2,7 @@ import { useCallback, useState } from "react";
 import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltDogDetailPageQuery } from "./__generated__/BeltDogDetailPageQuery.graphql";
-import {
-  isDogDeleteEventForId,
-} from "../realtime/dogEvents";
+import { isDogDeleteEventForId } from "../realtime/dogEvents";
 import {
   type BeltEventsSubscriptionResponse,
   useBeltEventsSubscription,

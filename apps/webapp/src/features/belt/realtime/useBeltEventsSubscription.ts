@@ -20,60 +20,61 @@ export function useBeltEventsSubscription({
   onNext,
   updater,
 }: BeltEventsSubscriptionOptions = {}): void {
-  const subscriptionConfig =
-    useMemo<GraphQLSubscriptionConfig<useBeltEventsSubscriptionSubscription>>(
-      () => ({
-        subscription: graphql`
-          subscription useBeltEventsSubscriptionSubscription {
-            beltEvent {
+  const subscriptionConfig = useMemo<
+    GraphQLSubscriptionConfig<useBeltEventsSubscriptionSubscription>
+  >(
+    () => ({
+      subscription: graphql`
+        subscription useBeltEventsSubscriptionSubscription {
+          beltEvent {
+            id
+            type
+            subjectId
+            user {
               id
-              type
-              subjectId
-              user {
-                id
-                phone
-                roles
-                rating
-                isVerified
-              }
-              dog {
-                id
-                ownerId
-                name
-                size
-                behaviorTags
-                notes
-                createdAt
-                updatedAt
-              }
-              order {
-                id
-                ownerId
-                walkerId
-                dogId
-                status
-                priceAmount
-                priceCurrency
-                locationAddress
-                locationLat
-                locationLng
-                startTime
-                endTime
-                acceptedAt
-                startedAt
-                finishedAt
-                cancelledAt
-                paidAt
-              }
+              phone
+              roles
+              rating
+              isVerified
+            }
+            dog {
+              id
+              ownerId
+              name
+              size
+              behaviorTags
+              notes
+              createdAt
+              updatedAt
+            }
+            order {
+              id
+              ownerId
+              walkerId
+              dogId
+              status
+              priceAmount
+              priceCurrency
+              locationAddress
+              locationLat
+              locationLng
+              startTime
+              endTime
+              acceptedAt
+              startedAt
+              finishedAt
+              cancelledAt
+              paidAt
             }
           }
-        `,
-        variables: {},
-        onNext,
-        updater,
-      }),
-      [onNext, updater],
-    );
+        }
+      `,
+      variables: {},
+      onNext,
+      updater,
+    }),
+    [onNext, updater],
+  );
 
   useSubscription<useBeltEventsSubscriptionSubscription>(subscriptionConfig);
 }

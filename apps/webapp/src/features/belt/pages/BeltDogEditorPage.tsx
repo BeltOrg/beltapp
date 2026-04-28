@@ -9,10 +9,7 @@ import type {
 import type { BeltDogEditorPageDeleteDogMutation } from "./__generated__/BeltDogEditorPageDeleteDogMutation.graphql";
 import type { BeltDogEditorPageEditQuery } from "./__generated__/BeltDogEditorPageEditQuery.graphql";
 import type { BeltDogEditorPageUpdateDogMutation } from "./__generated__/BeltDogEditorPageUpdateDogMutation.graphql";
-import {
-  applyMyDogsEvent,
-  isDogDeleteEventForId,
-} from "../realtime/dogEvents";
+import { applyMyDogsEvent, isDogDeleteEventForId } from "../realtime/dogEvents";
 import {
   type BeltEventsSubscriptionResponse,
   useBeltEventsSubscription,
