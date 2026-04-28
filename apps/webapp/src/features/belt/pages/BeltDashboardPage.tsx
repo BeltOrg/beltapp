@@ -240,7 +240,6 @@ function DashboardOrdersSection({
         <BeltEmptyState
           title={emptyTitle}
           description={emptyDescription}
-          action={action}
         />
       )}
     </Surface>
