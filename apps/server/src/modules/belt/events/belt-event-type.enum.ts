@@ -1,0 +1,20 @@
+import { registerEnumType } from '@nestjs/graphql';
+
+export enum BeltEventType {
+  USER_UPDATED = 'USER_UPDATED',
+  DOG_CREATED = 'DOG_CREATED',
+  DOG_UPDATED = 'DOG_UPDATED',
+  DOG_DELETED = 'DOG_DELETED',
+  ORDER_CREATED = 'ORDER_CREATED',
+  ORDER_UPDATED = 'ORDER_UPDATED',
+  ORDER_ACCEPTED = 'ORDER_ACCEPTED',
+  ORDER_STARTED = 'ORDER_STARTED',
+  ORDER_FINISHED = 'ORDER_FINISHED',
+  ORDER_CANCELLED = 'ORDER_CANCELLED',
+  ORDER_PAID = 'ORDER_PAID',
+  REVIEW_CREATED = 'REVIEW_CREATED',
+}
+
+registerEnumType(BeltEventType, {
+  name: 'BeltEventType',
+});

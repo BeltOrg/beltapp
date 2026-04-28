@@ -42,6 +42,8 @@ type GraphqlHttpRequestLike = {
 };
 
 type GraphqlContextFactoryInput = GraphqlHttpRequestLike & {
+  connectionParams?: Record<string, unknown>;
+  extra?: GraphqlWsExtra;
   req?: GraphqlHttpRequestLike;
   request?: GraphqlHttpRequestLike;
 };
@@ -56,26 +58,74 @@ function getGraphqlWsExtra(extra: unknown): GraphqlWsExtra {
 }
 
 function getGraphqlHttpHeaders({
+  connectionParams,
+  extra,
   headers,
   req,
   request,
 }: GraphqlContextFactoryInput):
   | Record<string, string | string[] | undefined>
   | undefined {
-  return (
+  const resolvedHeaders =
     req?.headers ??
     req?.raw?.headers ??
     request?.headers ??
     request?.raw?.headers ??
-    headers
-  );
+    extra?.request?.headers ??
+    headers;
+  const wsConnectionHeaders = getGraphqlWsConnectionHeaders(connectionParams);
+
+  if (!wsConnectionHeaders) {
+    return resolvedHeaders;
+  }
+
+  if (
+    resolvedHeaders?.authorization !== undefined ||
+    resolvedHeaders?.Authorization !== undefined
+  ) {
+    return resolvedHeaders;
+  }
+
+  return {
+    ...(resolvedHeaders ?? {}),
+    ...wsConnectionHeaders,
+  };
+}
+
+function getGraphqlWsConnectionHeaders(
+  connectionParams: Record<string, unknown> | undefined,
+): Record<string, string> | undefined {
+  const authorization =
+    getStringConnectionParam(connectionParams, 'authorization') ??
+    getStringConnectionParam(connectionParams, 'Authorization');
+
+  return authorization ? { authorization } : undefined;
+}
+
+function getStringConnectionParam(
+  connectionParams: Record<string, unknown> | undefined,
+  key: string,
+): string | undefined {
+  const value = connectionParams?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getRawGraphqlRequest(
+  request: GraphqlHttpRequestLike | IncomingMessage | undefined,
+): GraphqlHttpRequestLike | undefined {
+  if (typeof request !== 'object' || request === null || !('raw' in request)) {
+    return undefined;
+  }
+
+  return request.raw;
 }
 
 function getGraphqlHttpRequest(
   contextInput: GraphqlContextFactoryInput,
 ): GraphqlRequestLike {
-  const request = contextInput.req ?? contextInput.request;
-  const rawRequest = request?.raw;
+  const request =
+    contextInput.req ?? contextInput.request ?? contextInput.extra?.request;
+  const rawRequest = getRawGraphqlRequest(request);
 
   return {
     ...(rawRequest ?? request ?? {}),

@@ -5,6 +5,32 @@ type AuthPayload {
   user: User!
 }
 
+type BeltEvent {
+  dog: Dog
+  id: ID!
+  occurredAt: Date!
+  order: Order
+  review: Review
+  subjectId: ID!
+  type: BeltEventType!
+  user: User
+}
+
+enum BeltEventType {
+  DOG_CREATED
+  DOG_DELETED
+  DOG_UPDATED
+  ORDER_ACCEPTED
+  ORDER_CANCELLED
+  ORDER_CREATED
+  ORDER_FINISHED
+  ORDER_PAID
+  ORDER_STARTED
+  ORDER_UPDATED
+  REVIEW_CREATED
+  USER_UPDATED
+}
+
 input CancelOrderInput {
   reason: String
 }
@@ -167,6 +193,7 @@ type Review {
 
 type Subscription {
   MessageAdded: Message!
+  beltEvent: BeltEvent!
 }
 
 input UpdateDogInput {

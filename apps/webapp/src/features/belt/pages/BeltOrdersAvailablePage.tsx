@@ -1,9 +1,26 @@
+import { useCallback } from "react";
 import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
+import type { RecordSourceSelectorProxy } from "relay-runtime";
 import type { BeltOrdersAvailablePageQuery } from "./__generated__/BeltOrdersAvailablePageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
+import { useBeltEventsSubscription } from "../realtime/useBeltEventsSubscription";
+import {
+  prependRecordToRootListIfMissing,
+  removeRecordFromRootList,
+  replaceRecordInRootList,
+} from "../../../shared/relay/store";
 import { Card, Surface } from "../../../shared/ui";
+
+const AVAILABLE_ORDER_ADD_EVENTS = new Set(["ORDER_CREATED", "ORDER_UPDATED"]);
+const AVAILABLE_ORDER_REMOVE_EVENTS = new Set([
+  "ORDER_ACCEPTED",
+  "ORDER_CANCELLED",
+  "ORDER_STARTED",
+  "ORDER_FINISHED",
+  "ORDER_PAID",
+]);
 
 export function BeltOrdersAvailablePage() {
   const data = useLazyLoadQuery<BeltOrdersAvailablePageQuery>(
@@ -23,6 +40,49 @@ export function BeltOrdersAvailablePage() {
     {},
     { fetchPolicy: "store-and-network" },
   );
+  const updateAvailableOrders = useCallback(
+    (store: RecordSourceSelectorProxy) => {
+      const event = store.getRootField("beltEvent");
+      if (!event) {
+        return;
+      }
+
+      const eventType = event.getValue("type");
+      const subjectId = event.getValue("subjectId");
+      if (typeof eventType !== "string" || typeof subjectId !== "string") {
+        return;
+      }
+
+      if (AVAILABLE_ORDER_REMOVE_EVENTS.has(eventType)) {
+        removeRecordFromRootList(store, "availableOrders", subjectId);
+        return;
+      }
+
+      if (!AVAILABLE_ORDER_ADD_EVENTS.has(eventType)) {
+        return;
+      }
+
+      const order = event.getLinkedRecord("order");
+      if (!order) {
+        removeRecordFromRootList(store, "availableOrders", subjectId);
+        return;
+      }
+
+      if (
+        order.getValue("status") !== "CREATED" ||
+        order.getValue("walkerId") !== null
+      ) {
+        removeRecordFromRootList(store, "availableOrders", subjectId);
+        return;
+      }
+
+      replaceRecordInRootList(store, "availableOrders", order);
+      prependRecordToRootListIfMissing(store, "availableOrders", order);
+    },
+    [],
+  );
+
+  useBeltEventsSubscription(updateAvailableOrders);
 
   return (
     <Surface>

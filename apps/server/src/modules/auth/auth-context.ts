@@ -21,3 +21,9 @@ export function getCurrentUserIdFromContext(
 ): number | null {
   return context.req?.user?.id ?? null;
 }
+
+export function getCurrentUserFromContext(
+  context: BeltGraphqlContext,
+): AuthenticatedRequestUser | null {
+  return context.req?.user ?? null;
+}

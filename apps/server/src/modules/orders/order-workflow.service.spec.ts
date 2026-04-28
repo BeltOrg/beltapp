@@ -32,6 +32,8 @@ import type { DataSource, Repository } from 'typeorm';
 import type { DogEntity } from '../dogs/entities/dog.entity';
 import type { UsersService } from '../users/users.service';
 import { UserRole } from '../users/enums/user-role.enum';
+import type { BeltRealtimeService } from '../belt/events/belt-realtime.service';
+import { BeltEventType } from '../belt/events/belt-event-type.enum';
 
 function buildOrder(overrides: Partial<OrderEntity> = {}): OrderEntity {
   return {
@@ -95,12 +97,16 @@ describe('OrderWorkflowService', () => {
         roles: options.walkerRoles ?? [UserRole.WALKER],
       }),
     };
+    const beltRealtimeServiceMock = {
+      publishOrderEvent: jest.fn().mockResolvedValue(undefined),
+    };
 
     const service = new OrderWorkflowService(
       ordersRepositoryMock as unknown as Repository<OrderEntity>,
       dogsRepositoryMock as unknown as Repository<DogEntity>,
       dataSourceMock as unknown as DataSource,
       usersServiceMock as unknown as UsersService,
+      beltRealtimeServiceMock as unknown as BeltRealtimeService,
     );
 
     return {
@@ -109,6 +115,7 @@ describe('OrderWorkflowService', () => {
       queryBuilder,
       service,
       usersService: usersServiceMock,
+      beltRealtimeService: beltRealtimeServiceMock,
     };
   }
 
@@ -118,10 +125,11 @@ describe('OrderWorkflowService', () => {
       walkerId: 2,
       acceptedAt: new Date('2026-04-27T10:05:00.000Z'),
     });
-    const { ordersRepository, queryBuilder, service } = createHarness({
-      affected: 1,
-      order: acceptedOrder,
-    });
+    const { beltRealtimeService, ordersRepository, queryBuilder, service } =
+      createHarness({
+        affected: 1,
+        order: acceptedOrder,
+      });
 
     await expect(service.accept(10, 2)).resolves.toMatchObject({
       status: OrderStatus.ACCEPTED,
@@ -134,6 +142,10 @@ describe('OrderWorkflowService', () => {
     });
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('walker_id IS NULL');
     expect(ordersRepository.findOneBy).toHaveBeenCalledWith({ id: 10 });
+    expect(beltRealtimeService.publishOrderEvent).toHaveBeenCalledWith(
+      BeltEventType.ORDER_ACCEPTED,
+      acceptedOrder,
+    );
   });
 
   it('returns a stable conflict when another walker already accepted', async () => {

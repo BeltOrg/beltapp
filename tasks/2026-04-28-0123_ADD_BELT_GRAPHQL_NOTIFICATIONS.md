@@ -265,43 +265,46 @@ Routes: `/login`, wildcard route
 
 ## Server Checklist
 
-- [ ] Extract chat-specific PubSub into a shared realtime PubSub module that can
+- [x] Add a shared realtime PubSub module that can
       publish typed domain events through memory or Redis.
-- [ ] Add authenticated websocket context for `graphql-ws` connection params so
+- [x] Add authenticated websocket context for `graphql-ws` connection params so
       subscription guards can identify the current user.
-- [ ] Add Belt subscription GraphQL models, event enum, and resolver.
-- [ ] Implement server-side subscription filtering from the visibility rules.
+- [x] Add Belt subscription GraphQL models, event enum, and resolver.
+- [x] Implement server-side subscription filtering for the first order/user
+      event slice.
 - [ ] Publish events from user, dog, order, and review mutations after the
       database write completes.
-- [ ] Ensure order events are emitted after atomic state transitions, especially
+- [x] Publish order events after order mutations complete.
+- [x] Ensure order events are emitted after atomic state transitions, especially
       competing `acceptOrder` calls.
-- [ ] Add tests for event publishing and authorization filtering.
+- [x] Add tests for event publishing and authorization filtering.
 - [ ] Keep chat subscription only until Belt subscriptions cover the reusable
       example behavior, then remove the chat GraphQL surface.
 
 ## Webapp Checklist
 
-- [ ] Add a shared Belt subscription hook around Relay `useSubscription`.
-- [ ] Add shared Relay store updater helpers for root list add, replace, and
+- [x] Add a shared Belt subscription hook around Relay `useSubscription`.
+- [x] Add shared Relay store updater helpers for root list add, replace, and
       remove operations.
 - [ ] Add a current-user subscription at the app/session layer for `me` and
       auth-session cache updates.
 - [ ] Add owner dog event handling for dashboard, dog list, dog detail, dog
       editor, and create-walk selector flows.
-- [ ] Add available-order event handling for walker discovery.
+- [x] Add available-order event handling for walker discovery.
 - [ ] Add current-order event handling for all order detail views.
 - [ ] Add review event handling for order detail and rating updates.
-- [ ] Reuse the existing realtime connection status API for UI status; do not
+- [x] Reuse the existing realtime connection status API for subscriptions; do
+      not
       create new connection state stores.
-- [ ] Ensure subscription disposables are cleaned up on logout, route changes,
-      and user-session changes.
+- [x] Ensure subscription disposables are cleaned up by Relay route unmount and
+      session-scoped Relay environment remounts.
 
 ## Validation Checklist
 
-- [ ] Run GraphQL schema generation and Relay compiler after adding subscription
+- [x] Run GraphQL schema generation and Relay compiler after adding subscription
       fields.
-- [ ] Run server tests covering visibility and event publication.
-- [ ] Run webapp checks and build.
+- [x] Run server tests covering visibility and event publication.
+- [x] Run webapp checks and build.
 - [ ] Manual smoke: owner creates a walk and walker sees it in available walks
       without refresh.
 - [ ] Manual smoke: two walkers view the same available walk; one accepts, the

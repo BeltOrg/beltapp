@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
+import { BeltRealtimeService } from '../belt/events/belt-realtime.service';
+import { BeltEventType } from '../belt/events/belt-event-type.enum';
 import { DogEntity } from '../dogs/entities/dog.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { UserRole } from '../users/enums/user-role.enum';
@@ -25,6 +27,7 @@ export class OrderWorkflowService {
     private readonly dogsRepository: Repository<DogEntity>,
     private readonly dataSource: DataSource,
     private readonly usersService: UsersService,
+    private readonly beltRealtimeService: BeltRealtimeService,
   ) {}
 
   async findOwnerOrders(
@@ -108,7 +111,7 @@ export class OrderWorkflowService {
       });
     }
 
-    return this.ordersRepository.save(
+    const order = await this.ordersRepository.save(
       this.ordersRepository.create({
         ownerId,
         dogId: dog.id,
@@ -122,6 +125,13 @@ export class OrderWorkflowService {
         endTime: input.endTime,
       }),
     );
+
+    await this.beltRealtimeService.publishOrderEvent(
+      BeltEventType.ORDER_CREATED,
+      order,
+    );
+
+    return order;
   }
 
   async accept(id: number, walkerId: number): Promise<OrderEntity> {
@@ -167,7 +177,13 @@ export class OrderWorkflowService {
       throw this.invalidTransition(order.status, OrderStatus.ACCEPTED);
     }
 
-    return this.requireOrder(id);
+    const order = await this.requireOrder(id);
+    await this.beltRealtimeService.publishOrderEvent(
+      BeltEventType.ORDER_ACCEPTED,
+      order,
+    );
+
+    return order;
   }
 
   async start(id: number, walkerId: number): Promise<OrderEntity> {
@@ -177,7 +193,13 @@ export class OrderWorkflowService {
 
     order.status = OrderStatus.STARTED;
     order.startedAt = new Date();
-    return this.ordersRepository.save(order);
+    const savedOrder = await this.ordersRepository.save(order);
+    await this.beltRealtimeService.publishOrderEvent(
+      BeltEventType.ORDER_STARTED,
+      savedOrder,
+    );
+
+    return savedOrder;
   }
 
   async finish(id: number, walkerId: number): Promise<OrderEntity> {
@@ -187,7 +209,13 @@ export class OrderWorkflowService {
 
     order.status = OrderStatus.FINISHED;
     order.finishedAt = new Date();
-    return this.ordersRepository.save(order);
+    const savedOrder = await this.ordersRepository.save(order);
+    await this.beltRealtimeService.publishOrderEvent(
+      BeltEventType.ORDER_FINISHED,
+      savedOrder,
+    );
+
+    return savedOrder;
   }
 
   async cancel(
@@ -215,7 +243,13 @@ export class OrderWorkflowService {
     this.assertTransition(order.status, OrderStatus.CANCELLED);
     order.status = OrderStatus.CANCELLED;
     order.cancelledAt = new Date();
-    return this.ordersRepository.save(order);
+    const savedOrder = await this.ordersRepository.save(order);
+    await this.beltRealtimeService.publishOrderEvent(
+      BeltEventType.ORDER_CANCELLED,
+      savedOrder,
+    );
+
+    return savedOrder;
   }
 
   async markPaid(id: number, ownerId: number): Promise<OrderEntity> {
@@ -230,7 +264,13 @@ export class OrderWorkflowService {
     this.assertTransition(order.status, OrderStatus.PAID);
     order.status = OrderStatus.PAID;
     order.paidAt = new Date();
-    return this.ordersRepository.save(order);
+    const savedOrder = await this.ordersRepository.save(order);
+    await this.beltRealtimeService.publishOrderEvent(
+      BeltEventType.ORDER_PAID,
+      savedOrder,
+    );
+
+    return savedOrder;
   }
 
   private async requireOrder(id: number): Promise<OrderEntity> {

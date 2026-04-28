@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { BeltRealtimeModule } from '../belt/events/belt-realtime.module';
 import { DogEntity } from '../dogs/entities/dog.entity';
 import { UsersModule } from '../users/users.module';
 import { OrderEntity } from './entities/order.entity';
@@ -13,6 +14,7 @@ export const ORDERS_GRAPHQL_RESOLVERS = [OrdersResolver] as const;
   imports: [
     TypeOrmModule.forFeature([OrderEntity, DogEntity]),
     AuthModule,
+    BeltRealtimeModule,
     UsersModule,
   ],
   providers: [OrderWorkflowService, ...ORDERS_GRAPHQL_RESOLVERS],
