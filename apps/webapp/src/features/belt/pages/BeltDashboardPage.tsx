@@ -143,6 +143,19 @@ function formatOrderStartTime(value: unknown): string {
   return new Date(value).toLocaleString();
 }
 
+function getOrderStartTimestamp(order: DashboardOrder): number {
+  if (typeof order.startTime === "number") {
+    return order.startTime;
+  }
+
+  if (typeof order.startTime !== "string") {
+    return 0;
+  }
+
+  const timestamp = Date.parse(order.startTime);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
 type DashboardOrdersSectionProps = {
   activeAction: DashboardOrderActionState | null;
   action?: { href: string; label: string };
@@ -410,7 +423,11 @@ export function BeltDashboardPage() {
       ...order,
       side: "Walker" as const,
     })),
-  ];
+  ].sort((leftOrder, rightOrder) => {
+    return (
+      getOrderStartTimestamp(rightOrder) - getOrderStartTimestamp(leftOrder)
+    );
+  });
   const activeOrders = orders.filter((order) =>
     ACTIVE_ORDER_STATUSES.has(order.status),
   );
