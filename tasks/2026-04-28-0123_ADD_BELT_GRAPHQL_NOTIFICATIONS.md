@@ -274,6 +274,7 @@ Routes: `/login`, wildcard route
       event slice.
 - [ ] Publish events from user, dog, order, and review mutations after the
       database write completes.
+- [x] Publish user events after current-user mutations complete.
 - [x] Publish order events after order mutations complete.
 - [x] Publish dog events after dog mutations complete.
 - [x] Ensure order events are emitted after atomic state transitions, especially
@@ -287,7 +288,7 @@ Routes: `/login`, wildcard route
 - [x] Add a shared Belt subscription hook around Relay `useSubscription`.
 - [x] Add shared Relay store updater helpers for root list add, replace, and
       remove operations.
-- [ ] Add a current-user subscription at the app/session layer for `me` and
+- [x] Add a current-user subscription at the app/session layer for `me` and
       auth-session cache updates.
 - [x] Add owner dog event handling for dashboard, dog list, dog detail, dog
       editor, and create-walk selector flows.

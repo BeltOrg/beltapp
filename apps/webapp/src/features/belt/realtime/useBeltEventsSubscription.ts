@@ -29,6 +29,13 @@ export function useBeltEventsSubscription({
               id
               type
               subjectId
+              user {
+                id
+                phone
+                roles
+                rating
+                isVerified
+              }
               dog {
                 id
                 ownerId

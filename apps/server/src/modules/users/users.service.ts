@@ -1,14 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { BeltEventType } from '../belt/events/belt-event-type.enum';
+import { BeltRealtimeService } from '../belt/events/belt-realtime.service';
 import { UserRole } from './enums/user-role.enum';
 import { UserEntity } from './entities/user.entity';
+
+type UsersRepository = {
+  findOneBy(where: { id: number }): Promise<UserEntity | null>;
+  save(user: UserEntity): Promise<UserEntity>;
+};
+type UserEventPublisher = Pick<BeltRealtimeService, 'publishUserEvent'>;
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
+    private readonly usersRepository: UsersRepository,
+    @Inject(BeltRealtimeService)
+    private readonly beltRealtimeService: UserEventPublisher,
   ) {}
 
   async findEntityById(id: number): Promise<UserEntity | null> {
@@ -30,6 +39,12 @@ export class UsersService {
   async updateRoles(id: number, roles: UserRole[]): Promise<UserEntity> {
     const user = await this.requireEntityById(id);
     user.roles = [...new Set(roles)];
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+    await this.beltRealtimeService.publishUserEvent(
+      BeltEventType.USER_UPDATED,
+      savedUser,
+    );
+
+    return savedUser;
   }
 }

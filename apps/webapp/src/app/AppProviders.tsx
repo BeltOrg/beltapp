@@ -1,5 +1,6 @@
 import { Suspense, useMemo } from "react";
 import { RelayEnvironmentProvider } from "react-relay";
+import { BeltSessionRealtimeSync } from "../features/belt/realtime/BeltSessionRealtimeSync";
 import { useAuthSession } from "../shared/auth/session";
 import { createRelayEnvironment } from "../shared/relay/environment";
 import { PendingState } from "../shared/ui";
@@ -14,6 +15,7 @@ export function AppProviders() {
 
   return (
     <RelayEnvironmentProvider environment={environment}>
+      <BeltSessionRealtimeSync />
       <Suspense
         fallback={
           <main className="mx-auto grid min-h-screen w-full max-w-7xl place-items-center px-4 py-5 sm:px-6">
