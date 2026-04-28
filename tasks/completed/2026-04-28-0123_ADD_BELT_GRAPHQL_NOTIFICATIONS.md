@@ -316,7 +316,7 @@ Routes: `/login`, wildcard route
       live.
 - [x] Manual smoke: one participant reviews and the other participant sees the
       review/rating update live.
-- [ ] Reconnect smoke: terminate or restart the websocket connection and verify
+- [x] Reconnect smoke: terminate or restart the websocket connection and verify
       active `beltEvent` and `notificationCreated` subscriptions recover on
       Cloud Run-style disconnects.
 

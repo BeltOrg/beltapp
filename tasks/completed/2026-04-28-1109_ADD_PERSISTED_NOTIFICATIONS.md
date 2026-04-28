@@ -63,9 +63,9 @@ This is separate from raw Belt realtime events:
 
 ## Validation Checklist
 
-- [ ] Owner creates a walk; walker receives a persisted notification.
-- [ ] Walker accepts/starts/finishes; owner receives notifications.
-- [ ] Owner marks paid; walker receives a notification.
-- [ ] One participant reviews; the other receives a notification.
-- [ ] Notifications survive page reload.
-- [ ] Bell unread count updates live and clears after mark-read actions.
+- [x] Owner creates a walk; walker receives a persisted notification.
+- [x] Walker accepts/starts/finishes; owner receives notifications.
+- [x] Owner marks paid; walker receives a notification.
+- [x] One participant reviews; the other receives a notification.
+- [x] Notifications survive page reload.
+- [x] Bell unread count updates live and clears after mark-read actions.
