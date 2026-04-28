@@ -123,7 +123,7 @@ function RouterErrorBoundary() {
     <ErrorState
       eyebrow="Route error"
       message={message}
-      action={{ label: "Return home", href: "/home" }}
+      action={{ label: "Return to dashboard", href: "/dashboard" }}
     />
   );
 }
@@ -145,7 +145,7 @@ function AuthenticatedRoute({ children, roles }: AuthenticatedRouteProps) {
   }
 
   if (roles && !userHasAnyRole(session.user, roles)) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -246,7 +246,7 @@ function NotFoundPage() {
       eyebrow="Page not found"
       title="Unknown route"
       message={location.pathname}
-      action={{ label: "Return home", href: "/home" }}
+      action={{ label: "Return to dashboard", href: "/dashboard" }}
     />
   );
 }
@@ -259,16 +259,20 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/home" replace />,
+        element: <Navigate to="/dashboard" replace />,
       },
       {
         path: "home",
+        element: <Navigate to="/dashboard" replace />,
+      },
+      {
+        path: "dashboard",
         element: (
           <AuthenticatedRoute>
             <DashboardRoute />
           </AuthenticatedRoute>
         ),
-        handle: { title: "Home" } satisfies RouteHandle,
+        handle: { title: "Dashboard" } satisfies RouteHandle,
       },
       {
         path: "login",

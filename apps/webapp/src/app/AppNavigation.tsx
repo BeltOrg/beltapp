@@ -15,7 +15,7 @@ type PrimaryLink = {
 };
 
 const PRIMARY_LINKS: PrimaryLink[] = [
-  { to: "/home", label: "Home", end: true },
+  { to: "/dashboard", label: "Dashboard", end: true },
   { to: "/role", label: "Role", end: true },
   { to: "/dogs", label: "Dogs", end: false, roles: ["OWNER"] },
   { to: "/orders/new", label: "New walk", end: true, roles: ["OWNER"] },
@@ -44,7 +44,7 @@ export function Navigation() {
     >
       <div className="flex items-center justify-between gap-3 md:contents">
         <Link
-          to="/home"
+          to="/dashboard"
           className="inline-flex items-center gap-2 text-lg font-bold tracking-normal text-foreground md:col-start-1 md:row-start-1"
         >
           <img
