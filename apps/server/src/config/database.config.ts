@@ -5,10 +5,10 @@ import { CreateMessageTable20260415190000 } from '../database/migrations/2026041
 import { CreateBeltTables20260427180000 } from '../database/migrations/20260427180000-CreateBeltTables';
 import { CreateAuthTables20260428110000 } from '../database/migrations/20260428110000-CreateAuthTables';
 import { RemoveSeededMvpUsers20260428113000 } from '../database/migrations/20260428113000-RemoveSeededMvpUsers';
+import { DropMessageTable20260428104642 } from '../database/migrations/20260428104642-DropMessageTable';
 import { AuthAccountEntity } from '../modules/auth/entities/auth-account.entity';
 import { AuthRefreshTokenEntity } from '../modules/auth/entities/auth-refresh-token.entity';
 import { DogEntity } from '../modules/dogs/entities/dog.entity';
-import { MessageEntity } from '../modules/chat/entities/message.entity';
 import { OrderEntity } from '../modules/orders/entities/order.entity';
 import { ReviewEntity } from '../modules/reviews/entities/review.entity';
 import { UserEntity } from '../modules/users/entities/user.entity';
@@ -115,7 +115,6 @@ function getBaseDatabaseOptions(options: {
   const baseConfig: DataSourceOptions = {
     type: 'postgres',
     entities: [
-      MessageEntity,
       UserEntity,
       AuthAccountEntity,
       AuthRefreshTokenEntity,
@@ -136,6 +135,7 @@ function getBaseDatabaseOptions(options: {
             CreateBeltTables20260427180000,
             CreateAuthTables20260428110000,
             RemoveSeededMvpUsers20260428113000,
+            DropMessageTable20260428104642,
           ],
         }
       : {};

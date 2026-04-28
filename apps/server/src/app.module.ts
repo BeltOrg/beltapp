@@ -16,7 +16,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { getEnvFilePaths } from './config/env-paths';
 import { BeltModule } from './modules/belt/belt.module';
-import { ChatModule } from './modules/chat/chat.module';
+import { DateScalar } from './modules/common/scalars/date.scalar';
 import {
   createLoggedDataSource,
   getDatabaseConfig,
@@ -194,7 +194,6 @@ function logSubscriptionEvent(
       ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
     BeltModule,
-    ChatModule,
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       inject: [ConfigService],
@@ -271,6 +270,6 @@ function logSubscriptionEvent(
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DateScalar],
 })
 export class AppModule {}

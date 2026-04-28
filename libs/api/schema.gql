@@ -95,16 +95,8 @@ input LogoutInput {
   refreshToken: String!
 }
 
-"""chat message"""
-type Message {
-  author: String
-  body: String!
-  id: ID!
-}
-
 type Mutation {
   acceptOrder(id: ID!): Order!
-  addMessage(newMessageData: NewMessageInput!): Message!
   cancelOrder(id: ID!, input: CancelOrderInput): Order!
   createDog(input: CreateDogInput!): Dog!
   createOrder(input: CreateOrderInput!): Order!
@@ -116,15 +108,9 @@ type Mutation {
   markOrderPaid(id: ID!): Order!
   refreshSession(input: RefreshSessionInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
-  removeMessage(id: Float!): Boolean!
   startOrder(id: ID!): Order!
   updateDog(id: ID!, input: UpdateDogInput!): Dog!
   updateMyRoles(input: UpdateMyRolesInput!): User!
-}
-
-input NewMessageInput {
-  author: String
-  body: String!
 }
 
 type Order {
@@ -161,8 +147,6 @@ enum OrderStatus {
 type Query {
   availableOrders: [Order!]!
   dog(id: ID!): Dog!
-  getMessage(id: String!): Message!
-  getMessages: [Message!]!
   me: User!
   myDogs: [Dog!]!
   myOwnerOrders(statuses: [OrderStatus!]): [Order!]!
@@ -192,7 +176,6 @@ type Review {
 }
 
 type Subscription {
-  MessageAdded: Message!
   beltEvent: BeltEvent!
 }
 

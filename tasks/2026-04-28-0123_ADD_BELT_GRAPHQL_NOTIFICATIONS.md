@@ -5,9 +5,8 @@
 Add Belt live GraphQL notifications so data changes made by one user become
 visible to other relevant users without a manual page refresh.
 
-This task covers the product realtime layer. The existing chat subscription is
-only an example and should be replaced by reusable Belt subscription
-infrastructure.
+This task covers the product realtime layer. Belt now owns the realtime
+subscription surface through reusable server and webapp infrastructure.
 
 Relevant source areas:
 
@@ -19,8 +18,8 @@ Relevant source areas:
 - Current API contract: [libs/api/schema.gql](../libs/api/schema.gql)
 - Server subscription setup:
   [apps/server/src/app.module.ts](../apps/server/src/app.module.ts)
-- Current chat PubSub reference:
-  [apps/server/src/modules/chat/chat-pubsub.service.ts](../apps/server/src/modules/chat/chat-pubsub.service.ts)
+- Server realtime PubSub:
+  [apps/server/src/modules/realtime/realtime-pubsub.service.ts](../apps/server/src/modules/realtime/realtime-pubsub.service.ts)
 
 ## Principles
 
@@ -39,21 +38,20 @@ Relevant source areas:
 
 ## Current State
 
-The webapp already has Relay subscription transport in
-`shared/relay/environment.ts`, backed by `graphql-ws` in
-`shared/realtime/realtime-connection.ts`.
+The webapp has Relay subscription transport in `shared/relay/environment.ts`,
+backed by `graphql-ws` in `shared/realtime/realtime-connection.ts`.
 
-The server currently exposes only the chat subscription:
+The server exposes the Belt domain subscription:
 
 ```graphql
 type Subscription {
-  MessageAdded: Message!
+  beltEvent: BeltEvent!
 }
 ```
 
-Belt queries and mutations are implemented without Belt subscription fields.
-Chat PubSub supports memory and Redis drivers, which is the right deployment
-shape for Cloud Run multi-instance behavior, but it is chat-specific today.
+Belt queries and mutations publish typed events after durable writes. The
+shared realtime PubSub supports memory and Redis drivers, which is the right
+deployment shape for Cloud Run multi-instance behavior.
 
 ## Cloud Run Connection Lifecycle
 
@@ -280,7 +278,7 @@ Routes: `/login`, wildcard route
 - [x] Ensure order events are emitted after atomic state transitions, especially
       competing `acceptOrder` calls.
 - [x] Add tests for event publishing and authorization filtering.
-- [ ] Keep chat subscription only until Belt subscriptions cover the reusable
+- [x] Keep chat subscription only until Belt subscriptions cover the reusable
       example behavior, then remove the chat GraphQL surface.
 
 ## Webapp Checklist
@@ -308,23 +306,21 @@ Routes: `/login`, wildcard route
       fields.
 - [x] Run server tests covering visibility and event publication.
 - [x] Run webapp checks and build.
-- [ ] Manual smoke: owner creates a walk and walker sees it in available walks
+- [x] Manual smoke: owner creates a walk and walker sees it in available walks
       without refresh.
-- [ ] Manual smoke: two walkers view the same available walk; one accepts, the
+- [x] Manual smoke: two walkers view the same available walk; one accepts, the
       other loses the accept action without refresh.
-- [ ] Manual smoke: walker starts and finishes an order while owner detail view
+- [x] Manual smoke: walker starts and finishes an order while owner detail view
       updates live.
-- [ ] Manual smoke: owner marks paid and walker dashboard/order detail update
+- [x] Manual smoke: owner marks paid and walker dashboard/order detail update
       live.
-- [ ] Manual smoke: one participant reviews and the other participant sees the
+- [x] Manual smoke: one participant reviews and the other participant sees the
       review/rating update live.
 - [ ] Reconnect smoke: terminate or restart the websocket connection and verify
       active subscriptions recover on Cloud Run-style disconnects.
 
 ## Open Decisions
 
-- Decide whether the first implementation uses one broad `beltEvent`
-  subscription or several typed subscriptions if Relay updaters become clearer.
 - Decide whether reconnect should trigger route-level refetch for currently
   mounted Belt queries to cover events missed during downtime.
 - Decide whether live updates should be silent store updates only, or whether

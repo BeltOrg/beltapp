@@ -24,9 +24,9 @@ Target stack for the first implementation:
 Build the Belt MVP as a web-first service that can later support mobile without
 rewriting backend contracts.
 
-The current anonymous chat feature is an example for GraphQL subscriptions and
-Relay wiring. It is not a product feature for Belt and should be removed after
-the Belt domain replaces it.
+The original anonymous chat feature was an example for GraphQL subscriptions
+and Relay wiring. It is not a product feature for Belt and should be removed
+after the Belt domain replaces it.
 
 The server app already has the preferred shape for this repository: feature
 modules, resolvers, services, entities, DTOs, mappers, config, migrations, and
@@ -371,24 +371,21 @@ expected platform behavior for our deployment target, so Belt realtime features
 must treat GraphQL subscriptions as recoverable streams rather than permanent
 connections.
 
-The current anonymous chat implementation already contains the reference
-solution:
+Belt uses the former chat subscription lessons in shared realtime
+infrastructure:
 
 - Server GraphQL subscriptions are enabled through `graphql-ws` in
   [apps/server/src/app.module.ts](../apps/server/src/app.module.ts).
 - The server sets a `connectionInitWaitTimeout`, assigns a per-socket
   connection id, and logs `connect`, `disconnect`, and `subscribe` lifecycle
   events through structured subscription logs.
-- The server-side chat pub/sub adapter in
-  [apps/server/src/modules/chat/chat-pubsub.service.ts](../apps/server/src/modules/chat/chat-pubsub.service.ts)
+- The server-side realtime pub/sub adapter in
+  [apps/server/src/modules/realtime/realtime-pubsub.service.ts](../apps/server/src/modules/realtime/realtime-pubsub.service.ts)
   can use in-memory pub/sub locally or Redis in deployed/multi-instance
   environments. Redis is important because a reconnect may land on a different
   Cloud Run instance.
 - The webapp centralizes the resilient `graphql-ws` client in
   [apps/webapp/src/shared/realtime/realtime-connection.ts](../apps/webapp/src/shared/realtime/realtime-connection.ts).
-  [apps/webapp/src/realtime-connection.ts](../apps/webapp/src/realtime-connection.ts)
-  is kept only as a temporary compatibility re-export for the current chat
-  example.
 - The client is lazy, sends heartbeat pings every 10 seconds, terminates the
   socket if a pong is not received within 5 seconds, retries forever for
   recoverable closes, and uses capped exponential backoff with jitter.
@@ -400,13 +397,8 @@ solution:
 - Relay subscriptions are routed through the shared Relay environment in
   [apps/webapp/src/shared/relay/environment.ts](../apps/webapp/src/shared/relay/environment.ts),
   so individual components should not create their own websocket clients.
-- The chat UI in
-  [apps/webapp/src/components/chat/Chat.tsx](../apps/webapp/src/components/chat/Chat.tsx)
-  demonstrates how a feature consumes `useSubscription`, shows live connection
-  status, and handles retrying/disconnected states.
 
-Belt should keep this behavior but move it from chat-specific knowledge into a
-small realtime framework layer:
+Belt keeps this behavior in a small realtime framework layer:
 
 - Server realtime infrastructure should own GraphQL websocket setup,
   subscription lifecycle logging, current-user propagation for websocket
@@ -435,12 +427,12 @@ small realtime framework layer:
       [apps/server/src/config/database.config.ts](../apps/server/src/config/database.config.ts).
 - [x] Use the existing server module layout as the implementation template for
       Belt modules.
-- [ ] Extract GraphQL subscription setup and lifecycle logging into shared
+- [x] Extract GraphQL subscription setup and lifecycle logging into shared
       realtime infrastructure before adding Belt subscriptions.
-- [ ] Add websocket current-user propagation to the shared auth/realtime layer.
-- [ ] Extract Redis/in-memory pub/sub into a reusable domain event adapter
+- [x] Add websocket current-user propagation to the shared auth/realtime layer.
+- [x] Extract Redis/in-memory pub/sub into a reusable domain event adapter
       instead of keeping the pattern inside chat.
-- [ ] Remove the chat module after Belt replaces its subscription example role,
+- [x] Remove the chat module after Belt replaces its subscription example role,
       unless a short-lived compatibility period is needed during migration.
 
 ### Phase 2: Auth Foundation
@@ -600,7 +592,7 @@ or database model.
 - [x] Assigned walkers can start and finish walks.
 - [x] Orders follow the canonical state machine and reject invalid transitions.
 - [x] Completed orders can be reviewed.
-- [x] Chat example code is removed from the product path.
+- [x] Chat example GraphQL and webapp code is removed.
 - [x] Webapp product code is organized into Belt feature modules.
 - [ ] GraphQL contract, Relay artifacts, tests, and smoke checks match the Belt
       domain.
