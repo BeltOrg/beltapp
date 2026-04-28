@@ -26,6 +26,8 @@ export type AuthPayload = {
 
 const STORAGE_KEY = "belt:auth-session";
 const listeners = new Set<() => void>();
+let cachedSession: AuthSession | null | undefined;
+let storageListenerInitialized = false;
 
 function emitChange(): void {
   for (const listener of listeners) {
@@ -34,11 +36,28 @@ function emitChange(): void {
 }
 
 function subscribe(listener: () => void): () => void {
+  initializeStorageListener();
   listeners.add(listener);
 
   return () => {
     listeners.delete(listener);
   };
+}
+
+function initializeStorageListener(): void {
+  if (storageListenerInitialized || typeof window === "undefined") {
+    return;
+  }
+
+  storageListenerInitialized = true;
+  window.addEventListener("storage", (event) => {
+    if (event.key !== STORAGE_KEY) {
+      return;
+    }
+
+    cachedSession = readStoredSession();
+    emitChange();
+  });
 }
 
 export function isUserRole(value: unknown): value is UserRole {
@@ -94,6 +113,8 @@ function readStoredSession(): AuthSession | null {
 }
 
 function writeStoredSession(session: AuthSession | null): void {
+  cachedSession = session;
+
   if (typeof window === "undefined") {
     return;
   }
@@ -109,7 +130,11 @@ function writeStoredSession(session: AuthSession | null): void {
 }
 
 export function getAuthSession(): AuthSession | null {
-  return readStoredSession();
+  if (cachedSession === undefined) {
+    cachedSession = readStoredSession();
+  }
+
+  return cachedSession;
 }
 
 export function getAccessToken(): string | null {
