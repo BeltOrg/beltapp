@@ -47,9 +47,9 @@ export function Navigation() {
         className="inline-flex items-center gap-2 text-lg font-bold tracking-normal text-foreground"
       >
         <img
-          src="/belt-logo.svg"
+          src="/belt-logo.png"
           alt=""
-          className="size-10 shrink-0"
+          className="size-10 shrink-0 object-contain"
           aria-hidden="true"
         />
         <span>Belt</span>
