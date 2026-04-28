@@ -1,8 +1,14 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router";
-import { graphql, useLazyLoadQuery } from "react-relay";
+import { graphql, useLazyLoadQuery, useMutation } from "react-relay";
 import type { RecordSourceSelectorProxy } from "relay-runtime";
-import type { BeltDashboardPageQuery } from "./__generated__/BeltDashboardPageQuery.graphql";
+import type { BeltDashboardPageFinishOrderMutation } from "./__generated__/BeltDashboardPageFinishOrderMutation.graphql";
+import type { BeltDashboardPageMarkPaidMutation } from "./__generated__/BeltDashboardPageMarkPaidMutation.graphql";
+import type {
+  BeltDashboardPageQuery,
+  OrderStatus,
+} from "./__generated__/BeltDashboardPageQuery.graphql";
+import type { BeltDashboardPageStartOrderMutation } from "./__generated__/BeltDashboardPageStartOrderMutation.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
 import { applyMyDogsEvent } from "../realtime/dogEvents";
@@ -11,9 +17,227 @@ import {
   prependRecordToRootListIfMissing,
   replaceRecordInRootList,
 } from "../../../shared/relay/store";
-import { Button, Surface } from "../../../shared/ui";
+import { getRelayErrorMessage } from "../../../shared/relay/errors";
+import { Alert, Button, Surface } from "../../../shared/ui";
+
+type DashboardOrderSide = "Owner" | "Walker";
+
+type DashboardOrder = {
+  id: string;
+  locationAddress: string;
+  ownerId: string;
+  side: DashboardOrderSide;
+  startTime: unknown;
+  status: OrderStatus;
+  walkerId: string | null | undefined;
+};
+
+type DashboardOrderMutationAction = "finish" | "mark-paid" | "start";
+
+type DashboardOrderAction =
+  | {
+      href: string;
+      kind: "link";
+      label: string;
+    }
+  | {
+      action: DashboardOrderMutationAction;
+      inFlightLabel: string;
+      kind: "mutation";
+      label: string;
+    };
+
+type DashboardOrderActionState = {
+  action: DashboardOrderMutationAction;
+  orderId: string;
+};
+
+type DashboardOrderMutationRootField =
+  | "finishOrder"
+  | "markOrderPaid"
+  | "startOrder";
+
+const ACTIVE_ORDER_STATUSES = new Set<OrderStatus>([
+  "CREATED",
+  "ACCEPTED",
+  "STARTED",
+]);
+
+const COMPLETED_ORDER_STATUSES = new Set<OrderStatus>(["FINISHED", "PAID"]);
+
+function getDashboardOrderPath(order: DashboardOrder): string {
+  if (order.status === "STARTED" && order.side === "Walker") {
+    return `/orders/${order.id}/active`;
+  }
+
+  if (order.status === "FINISHED") {
+    return `/orders/${order.id}/finish`;
+  }
+
+  return `/orders/${order.id}`;
+}
+
+function getDashboardOrderAction(order: DashboardOrder): DashboardOrderAction {
+  switch (order.status) {
+    case "ACCEPTED":
+      return order.side === "Walker"
+        ? {
+            action: "start",
+            inFlightLabel: "Starting...",
+            kind: "mutation",
+            label: "Start walk",
+          }
+        : {
+            href: getDashboardOrderPath(order),
+            kind: "link",
+            label: "View walk",
+          };
+    case "STARTED":
+      return order.side === "Walker"
+        ? {
+            action: "finish",
+            inFlightLabel: "Finishing...",
+            kind: "mutation",
+            label: "Finish walk",
+          }
+        : {
+            href: getDashboardOrderPath(order),
+            kind: "link",
+            label: "View active walk",
+          };
+    case "FINISHED":
+      return order.side === "Owner"
+        ? {
+            action: "mark-paid",
+            inFlightLabel: "Marking paid...",
+            kind: "mutation",
+            label: "Mark paid",
+          }
+        : {
+            href: getDashboardOrderPath(order),
+            kind: "link",
+            label: "Review walk",
+          };
+    case "PAID":
+      return {
+        href: getDashboardOrderPath(order),
+        kind: "link",
+        label: "View review",
+      };
+    case "CANCELLED":
+    case "CREATED":
+    case "%future added value":
+      return {
+        href: getDashboardOrderPath(order),
+        kind: "link",
+        label: "View walk",
+      };
+  }
+}
+
+function formatOrderStartTime(value: unknown): string {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return "";
+  }
+
+  return new Date(value).toLocaleString();
+}
+
+type DashboardOrdersSectionProps = {
+  activeAction: DashboardOrderActionState | null;
+  action?: { href: string; label: string };
+  emptyDescription: string;
+  emptyTitle: string;
+  onOrderAction: (
+    order: DashboardOrder,
+    action: DashboardOrderMutationAction,
+  ) => void;
+  orders: DashboardOrder[];
+  title: string;
+};
+
+function DashboardOrdersSection({
+  activeAction,
+  action,
+  emptyDescription,
+  emptyTitle,
+  onOrderAction,
+  orders,
+  title,
+}: DashboardOrdersSectionProps) {
+  return (
+    <Surface>
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <h2 className="m-0 text-xl font-semibold">{title}</h2>
+        {action ? (
+          <Button asChild variant="primary">
+            <Link to={action.href}>{action.label}</Link>
+          </Button>
+        ) : null}
+      </div>
+      {orders.length > 0 ? (
+        <ul className="grid gap-3 p-0">
+          {orders.map((order) => {
+            const orderPath = getDashboardOrderPath(order);
+            const orderAction = getDashboardOrderAction(order);
+            const isActionInFlight =
+              orderAction.kind === "mutation" &&
+              activeAction?.orderId === order.id &&
+              activeAction.action === orderAction.action;
+            const startTimeLabel = formatOrderStartTime(order.startTime);
+
+            return (
+              <li
+                key={`${order.side}-${order.id}`}
+                className="flex flex-col gap-3 rounded-ui border border-border bg-surface p-3 transition-colors hover:border-ring hover:bg-muted sm:flex-row sm:items-center sm:justify-between"
+              >
+                <Link className="grid min-w-0 flex-1 gap-1" to={orderPath}>
+                  <strong className="block truncate text-foreground">
+                    {order.locationAddress}
+                  </strong>
+                  <span className="text-sm text-muted-foreground">
+                    {order.side}
+                    {startTimeLabel ? ` · ${startTimeLabel}` : ""}
+                  </span>
+                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link className="inline-flex" to={orderPath}>
+                    <BeltStatusBadge status={order.status} />
+                  </Link>
+                  {orderAction.kind === "link" ? (
+                    <Button asChild>
+                      <Link to={orderAction.href}>{orderAction.label}</Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={activeAction !== null}
+                      onClick={() => onOrderAction(order, orderAction.action)}
+                    >
+                      {isActionInFlight
+                        ? orderAction.inFlightLabel
+                        : orderAction.label}
+                    </Button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <BeltEmptyState
+          title={emptyTitle}
+          description={emptyDescription}
+          action={action}
+        />
+      )}
+    </Surface>
+  );
+}
 
 export function BeltDashboardPage() {
+  const [activeAction, setActiveAction] =
+    useState<DashboardOrderActionState | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const data = useLazyLoadQuery<BeltDashboardPageQuery>(
     graphql`
       query BeltDashboardPageQuery {
@@ -30,6 +254,7 @@ export function BeltDashboardPage() {
         }
         myOwnerOrders {
           id
+          ownerId
           status
           startTime
           locationAddress
@@ -37,6 +262,7 @@ export function BeltDashboardPage() {
         }
         myWalkerOrders {
           id
+          walkerId
           status
           startTime
           locationAddress
@@ -46,6 +272,48 @@ export function BeltDashboardPage() {
     `,
     {},
     { fetchPolicy: "store-and-network" },
+  );
+  const [commitStartOrder] = useMutation<BeltDashboardPageStartOrderMutation>(
+    graphql`
+      mutation BeltDashboardPageStartOrderMutation($id: ID!) {
+        startOrder(id: $id) {
+          id
+          ownerId
+          walkerId
+          status
+          startTime
+          locationAddress
+        }
+      }
+    `,
+  );
+  const [commitFinishOrder] = useMutation<BeltDashboardPageFinishOrderMutation>(
+    graphql`
+      mutation BeltDashboardPageFinishOrderMutation($id: ID!) {
+        finishOrder(id: $id) {
+          id
+          ownerId
+          walkerId
+          status
+          startTime
+          locationAddress
+        }
+      }
+    `,
+  );
+  const [commitMarkPaid] = useMutation<BeltDashboardPageMarkPaidMutation>(
+    graphql`
+      mutation BeltDashboardPageMarkPaidMutation($id: ID!) {
+        markOrderPaid(id: $id) {
+          id
+          ownerId
+          walkerId
+          status
+          startTime
+          locationAddress
+        }
+      }
+    `,
   );
   const currentUserId = data.me.id;
   const updateDashboardOrders = useCallback(
@@ -73,10 +341,82 @@ export function BeltDashboardPage() {
 
   useBeltEventsSubscription({ updater: updateDashboardOrders });
 
-  const activeOrders = [
-    ...data.myOwnerOrders.map((order) => ({ ...order, side: "Owner" })),
-    ...data.myWalkerOrders.map((order) => ({ ...order, side: "Walker" })),
-  ].filter((order) => order.status !== "PAID" && order.status !== "CANCELLED");
+  const updateCommittedOrder = useCallback(
+    (
+      store: RecordSourceSelectorProxy,
+      rootField: DashboardOrderMutationRootField,
+    ) => {
+      const order = store.getRootField(rootField);
+      if (!order) {
+        return;
+      }
+
+      replaceRecordInRootList(store, "myOwnerOrders", order);
+      replaceRecordInRootList(store, "myWalkerOrders", order);
+    },
+    [],
+  );
+
+  function runOrderAction(
+    order: DashboardOrder,
+    action: DashboardOrderMutationAction,
+  ): void {
+    const variables = { id: order.id };
+    const onCompleted = () => {
+      setActiveAction(null);
+    };
+    const onError = (error: Error) => {
+      setActiveAction(null);
+      setActionError(getRelayErrorMessage(error));
+    };
+
+    setActionError(null);
+    setActiveAction({ action, orderId: order.id });
+
+    switch (action) {
+      case "start":
+        commitStartOrder({
+          variables,
+          updater: (store) => updateCommittedOrder(store, "startOrder"),
+          onCompleted,
+          onError,
+        });
+        break;
+      case "finish":
+        commitFinishOrder({
+          variables,
+          updater: (store) => updateCommittedOrder(store, "finishOrder"),
+          onCompleted,
+          onError,
+        });
+        break;
+      case "mark-paid":
+        commitMarkPaid({
+          variables,
+          updater: (store) => updateCommittedOrder(store, "markOrderPaid"),
+          onCompleted,
+          onError,
+        });
+        break;
+    }
+  }
+
+  const orders: DashboardOrder[] = [
+    ...data.myOwnerOrders.map((order) => ({
+      ...order,
+      side: "Owner" as const,
+    })),
+    ...data.myWalkerOrders.map((order) => ({
+      ...order,
+      side: "Walker" as const,
+    })),
+  ];
+  const activeOrders = orders.filter((order) =>
+    ACTIVE_ORDER_STATUSES.has(order.status),
+  );
+  const completedOrders = orders.filter((order) =>
+    COMPLETED_ORDER_STATUSES.has(order.status),
+  );
   const isOwner = data.me.roles.includes("OWNER");
   const isWalker = data.me.roles.includes("WALKER");
   const primaryWalkAction = isOwner
@@ -113,40 +453,29 @@ export function BeltDashboardPage() {
         </dl>
       </Surface>
 
-      <Surface>
-        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-          <h2 className="m-0 text-xl font-semibold">Active walks</h2>
-          {primaryWalkAction ? (
-            <Button asChild variant="primary">
-              <Link to={primaryWalkAction.href}>{primaryWalkAction.label}</Link>
-            </Button>
-          ) : null}
-        </div>
-        {activeOrders.length > 0 ? (
-          <ul className="grid gap-3 p-0">
-            {activeOrders.map((order) => (
-              <li
-                key={`${order.side}-${order.id}`}
-                className="flex items-center justify-between gap-3 rounded-ui border border-border bg-surface p-3"
-              >
-                <div>
-                  <strong className="block">{order.locationAddress}</strong>
-                  <span className="text-sm text-muted-foreground">
-                    {order.side}
-                  </span>
-                </div>
-                <BeltStatusBadge status={order.status} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <BeltEmptyState
-            title="No active walks"
-            description="New and accepted walks will appear here."
-            action={primaryWalkAction}
-          />
-        )}
-      </Surface>
+      {actionError ? (
+        <Alert className="lg:col-span-2">{actionError}</Alert>
+      ) : null}
+
+      <div className={isOwner ? "grid gap-4" : "grid gap-4 lg:col-span-2"}>
+        <DashboardOrdersSection
+          title="Active walks"
+          orders={activeOrders}
+          emptyTitle="No active walks"
+          emptyDescription="New and accepted walks will appear here."
+          action={primaryWalkAction}
+          activeAction={activeAction}
+          onOrderAction={runOrderAction}
+        />
+        <DashboardOrdersSection
+          title="Completed walks"
+          orders={completedOrders}
+          emptyTitle="No completed walks"
+          emptyDescription="Finished and paid walks will stay available here."
+          activeAction={activeAction}
+          onOrderAction={runOrderAction}
+        />
+      </div>
 
       {isOwner ? (
         <Surface>
