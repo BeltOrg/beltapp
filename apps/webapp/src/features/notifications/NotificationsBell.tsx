@@ -255,7 +255,7 @@ export function NotificationsBell() {
       </button>
 
       {isOpen ? (
-        <section className="absolute right-0 z-20 mt-2 grid w-[min(22rem,calc(100vw-2rem))] gap-2 rounded-ui border border-border bg-surface p-3 text-surface-foreground shadow-lg">
+        <section className="fixed left-4 right-4 top-20 z-20 grid gap-2 rounded-ui border border-border bg-surface p-3 text-surface-foreground shadow-lg md:absolute md:left-auto md:right-0 md:top-auto md:mt-2 md:w-[min(22rem,calc(100vw-2rem))]">
           <div className="flex items-center justify-between gap-3">
             <h2 className="m-0 text-base font-semibold">Notifications</h2>
             {unreadCount > 0 ? (
