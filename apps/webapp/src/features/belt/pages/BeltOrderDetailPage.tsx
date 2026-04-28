@@ -1,5 +1,5 @@
-import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router";
+import { type FormEvent, useCallback, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import {
   graphql,
   useFragment,
@@ -20,6 +20,10 @@ import type {
 } from "./__generated__/BeltOrderDetailPage_orderFields.graphql";
 import type { BeltOrderDetailPageStartOrderMutation } from "./__generated__/BeltOrderDetailPageStartOrderMutation.graphql";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
+import {
+  type BeltEventsSubscriptionResponse,
+  useBeltEventsSubscription,
+} from "../realtime/useBeltEventsSubscription";
 import {
   type AuthenticatedUser,
   useRequiredAuthSession,
@@ -42,6 +46,14 @@ type BeltOrderDetailPageProps = {
 type OrderAction = "accept" | "start" | "finish" | "cancel" | "mark-paid";
 
 type OrderRecord = BeltOrderDetailPage_orderFields$data;
+
+const ORDER_DETAIL_VISIBILITY_LOSS_EVENTS = new Set([
+  "ORDER_ACCEPTED",
+  "ORDER_CANCELLED",
+  "ORDER_STARTED",
+  "ORDER_FINISHED",
+  "ORDER_PAID",
+]);
 
 const ORDER_DETAIL_SELECTION = graphql`
   fragment BeltOrderDetailPage_orderFields on Order {
@@ -225,6 +237,34 @@ function getNextPath(orderId: string, action: OrderAction): string {
   }
 }
 
+function getOrderRealtimeNotice(eventType: string): string {
+  switch (eventType) {
+    case "ORDER_ACCEPTED":
+      return "Another walker accepted this walk. It is no longer available.";
+    case "ORDER_CANCELLED":
+      return "This walk was cancelled. No more actions are available here.";
+    default:
+      return "This walk changed and is no longer available from this view.";
+  }
+}
+
+function getOrderStatusFromEventType(eventType: string): OrderStatus | null {
+  switch (eventType) {
+    case "ORDER_ACCEPTED":
+      return "ACCEPTED";
+    case "ORDER_CANCELLED":
+      return "CANCELLED";
+    case "ORDER_STARTED":
+      return "STARTED";
+    case "ORDER_FINISHED":
+      return "FINISHED";
+    case "ORDER_PAID":
+      return "PAID";
+    default:
+      return null;
+  }
+}
+
 export function BeltOrderDetailPage({
   orderId,
   view,
@@ -233,6 +273,11 @@ export function BeltOrderDetailPage({
   const { user: currentUser } = useRequiredAuthSession();
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<OrderAction | null>(null);
+  const [orderRealtimeNotice, setOrderRealtimeNotice] = useState<string | null>(
+    null,
+  );
+  const [orderRealtimeStatus, setOrderRealtimeStatus] =
+    useState<OrderStatus | null>(null);
   const data = useLazyLoadQuery<BeltOrderDetailPageQuery>(
     graphql`
       query BeltOrderDetailPageQuery($id: ID!) {
@@ -319,16 +364,43 @@ export function BeltOrderDetailPage({
         }
       }
     `);
+  const handleBeltEvent = useCallback(
+    (response: BeltEventsSubscriptionResponse | null | undefined) => {
+      const event = response?.beltEvent;
+      if (!event || event.subjectId !== orderId) {
+        return;
+      }
+
+      if (event.order) {
+        setOrderRealtimeNotice(null);
+        setOrderRealtimeStatus(null);
+        return;
+      }
+
+      if (ORDER_DETAIL_VISIBILITY_LOSS_EVENTS.has(event.type)) {
+        setActiveAction(null);
+        setOrderRealtimeStatus(getOrderStatusFromEventType(event.type));
+        setOrderRealtimeNotice(getOrderRealtimeNotice(event.type));
+      }
+    },
+    [orderId],
+  );
+  useBeltEventsSubscription({ onNext: handleBeltEvent });
+
   const currentUserId = String(currentUser.id);
-  const actions = getAvailableActions(order, currentUser);
+  const actions = orderRealtimeNotice
+    ? []
+    : getAvailableActions(order, currentUser);
   const isActionInFlight = activeAction !== null;
   const existingReview = data.myReviews.find(
     (review) =>
       review.orderId === order.id && review.reviewerId === currentUserId,
   );
-  const canReview = canReviewOrder(order, currentUserId);
+  const canReview =
+    orderRealtimeNotice === null && canReviewOrder(order, currentUserId);
   const shouldShowReviewPanel =
-    view === "finish" || canReview || existingReview !== undefined;
+    orderRealtimeNotice === null &&
+    (view === "finish" || canReview || existingReview !== undefined);
   const [reviewRating, setReviewRating] = useState("5");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -431,6 +503,11 @@ export function BeltOrderDetailPage({
     order.status,
     isParticipant(order, currentUserId),
   );
+  const displayedOrderStatus = orderRealtimeStatus ?? order.status;
+  const walkerLabel =
+    orderRealtimeStatus === "ACCEPTED" && order.walkerId === null
+      ? "Assigned to another walker"
+      : (order.walkerId ?? "Unassigned");
 
   return (
     <Surface framed>
@@ -441,10 +518,21 @@ export function BeltOrderDetailPage({
           </p>
           <h2 className="m-0 text-xl font-semibold">{order.locationAddress}</h2>
         </div>
-        <BeltStatusBadge status={order.status} />
+        <BeltStatusBadge status={displayedOrderStatus} />
       </div>
 
-      <p className="m-0 text-sm text-muted-foreground">{stateMessage}</p>
+      {orderRealtimeNotice ? (
+        <Alert className="grid gap-2" role="status" tone="info">
+          <span>{orderRealtimeNotice}</span>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link to="/orders/available">View available walks</Link>
+            </Button>
+          </div>
+        </Alert>
+      ) : (
+        <p className="m-0 text-sm text-muted-foreground">{stateMessage}</p>
+      )}
       {actionError ? <Alert>{actionError}</Alert> : null}
 
       <dl className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
@@ -458,9 +546,7 @@ export function BeltOrderDetailPage({
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Walker</dt>
-          <dd className="m-0 font-semibold">
-            {order.walkerId ?? "Unassigned"}
-          </dd>
+          <dd className="m-0 font-semibold">{walkerLabel}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Price</dt>

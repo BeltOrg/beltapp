@@ -5,8 +5,21 @@ import type { useBeltEventsSubscriptionSubscription } from "./__generated__/useB
 
 type BeltEventsUpdater =
   GraphQLSubscriptionConfig<useBeltEventsSubscriptionSubscription>["updater"];
+type BeltEventsOnNext =
+  GraphQLSubscriptionConfig<useBeltEventsSubscriptionSubscription>["onNext"];
 
-export function useBeltEventsSubscription(updater?: BeltEventsUpdater): void {
+export type BeltEventsSubscriptionResponse =
+  useBeltEventsSubscriptionSubscription["response"];
+
+type BeltEventsSubscriptionOptions = {
+  onNext?: BeltEventsOnNext;
+  updater?: BeltEventsUpdater;
+};
+
+export function useBeltEventsSubscription({
+  onNext,
+  updater,
+}: BeltEventsSubscriptionOptions = {}): void {
   const subscriptionConfig =
     useMemo<GraphQLSubscriptionConfig<useBeltEventsSubscriptionSubscription>>(
       () => ({
@@ -39,9 +52,10 @@ export function useBeltEventsSubscription(updater?: BeltEventsUpdater): void {
           }
         `,
         variables: {},
+        onNext,
         updater,
       }),
-      [updater],
+      [onNext, updater],
     );
 
   useSubscription<useBeltEventsSubscriptionSubscription>(subscriptionConfig);

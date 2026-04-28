@@ -82,7 +82,7 @@ export function BeltOrdersAvailablePage() {
     [],
   );
 
-  useBeltEventsSubscription(updateAvailableOrders);
+  useBeltEventsSubscription({ updater: updateAvailableOrders });
 
   return (
     <Surface>
