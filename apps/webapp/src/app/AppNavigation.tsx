@@ -44,9 +44,15 @@ export function Navigation() {
     >
       <Link
         to="/home"
-        className="text-lg font-bold tracking-normal text-foreground"
+        className="inline-flex items-center gap-2 text-lg font-bold tracking-normal text-foreground"
       >
-        Belt
+        <img
+          src="/belt-logo.svg"
+          alt=""
+          className="size-10 shrink-0"
+          aria-hidden="true"
+        />
+        <span>Belt</span>
       </Link>
       <div className="flex flex-wrap gap-1">
         {visibleLinks.map((link) => (
