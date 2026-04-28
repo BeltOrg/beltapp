@@ -4,6 +4,7 @@ import {
   useAuthSession,
   userHasAnyRole,
 } from "../shared/auth/session";
+import { getAuthRedirectPath } from "../shared/auth/redirect";
 import { getRelayErrorMessage } from "../shared/relay/errors";
 import { ErrorState, PendingState } from "../shared/ui";
 import { Navigation } from "./AppNavigation";
@@ -77,6 +78,10 @@ type AuthenticatedRouteProps = {
   roles?: UserRole[];
 };
 
+type PublicOnlyRouteProps = {
+  children: ReactNode;
+};
+
 function isRouteHandle(handle: unknown): handle is RouteHandle {
   if (typeof handle !== "object" || handle === null) {
     return false;
@@ -141,6 +146,17 @@ function AuthenticatedRoute({ children, roles }: AuthenticatedRouteProps) {
 
   if (roles && !userHasAnyRole(session.user, roles)) {
     return <Navigate to="/home" replace />;
+  }
+
+  return children;
+}
+
+function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
+  const location = useLocation();
+  const session = useAuthSession();
+
+  if (session) {
+    return <Navigate to={getAuthRedirectPath(location.state)} replace />;
   }
 
   return children;
@@ -259,7 +275,11 @@ const router = createBrowserRouter([
       },
       {
         path: "login",
-        element: <LoginRoute />,
+        element: (
+          <PublicOnlyRoute>
+            <LoginRoute />
+          </PublicOnlyRoute>
+        ),
         handle: { title: "Login" } satisfies RouteHandle,
       },
       {

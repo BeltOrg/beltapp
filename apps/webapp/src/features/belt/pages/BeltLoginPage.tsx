@@ -5,24 +5,16 @@ import {
   loginWithPassword,
   registerWithPassword,
 } from "../../../shared/auth/auth-api";
+import { getAuthRedirectPath } from "../../../shared/auth/redirect";
 import type { UserRole } from "../../../shared/auth/session";
 import { Alert, Button, Field, Surface, TextInput } from "../../../shared/ui";
 
 type AuthMode = "login" | "register";
 
-function getRedirectPath(routeState: unknown): string {
-  if (typeof routeState !== "object" || routeState === null) {
-    return "/home";
-  }
-
-  const from = (routeState as { from?: unknown }).from;
-  return typeof from === "string" && from.startsWith("/") ? from : "/home";
-}
-
 export function BeltLoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectPath = getRedirectPath(location.state);
+  const redirectPath = getAuthRedirectPath(location.state);
   const [mode, setMode] = useState<AuthMode>("login");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
