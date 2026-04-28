@@ -6,6 +6,8 @@ import { mapDog } from '../../dogs/dogs.mapper';
 import { OrderEntity } from '../../orders/entities/order.entity';
 import { mapOrder } from '../../orders/orders.mapper';
 import { RealtimePubSubService } from '../../realtime/realtime-pubsub.service';
+import { ReviewEntity } from '../../reviews/entities/review.entity';
+import { mapReview } from '../../reviews/reviews.mapper';
 import { UserEntity } from '../../users/entities/user.entity';
 import { mapUser } from '../../users/users.mapper';
 import { BeltEvent, BeltEventPayload } from './belt-event.model';
@@ -62,6 +64,22 @@ export class BeltRealtimeService {
       dog: null,
       order: null,
       review: null,
+    });
+  }
+
+  async publishReviewEvent(
+    type: BeltEventType,
+    review: ReviewEntity,
+  ): Promise<void> {
+    await this.safePublish({
+      id: randomUUID(),
+      type,
+      occurredAt: new Date(),
+      subjectId: String(review.id),
+      user: null,
+      dog: null,
+      order: null,
+      review: mapReview(review),
     });
   }
 

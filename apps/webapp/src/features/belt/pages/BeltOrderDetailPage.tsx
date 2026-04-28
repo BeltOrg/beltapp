@@ -29,6 +29,7 @@ import {
   useRequiredAuthSession,
 } from "../../../shared/auth/session";
 import { getRelayErrorMessage } from "../../../shared/relay/errors";
+import { prependRecordToRootListIfMissing } from "../../../shared/relay/store";
 import {
   Alert,
   Button,
@@ -367,13 +368,25 @@ export function BeltOrderDetailPage({
   const handleBeltEvent = useCallback(
     (response: BeltEventsSubscriptionResponse | null | undefined) => {
       const event = response?.beltEvent;
-      if (!event || event.subjectId !== orderId) {
+      if (!event) {
         return;
       }
 
       if (event.order) {
+        if (event.subjectId !== orderId) {
+          return;
+        }
+
         setOrderRealtimeNotice(null);
         setOrderRealtimeStatus(null);
+        return;
+      }
+
+      if (event.review) {
+        return;
+      }
+
+      if (event.subjectId !== orderId) {
         return;
       }
 
@@ -385,9 +398,30 @@ export function BeltOrderDetailPage({
     },
     [orderId],
   );
-  useBeltEventsSubscription({ onNext: handleBeltEvent });
-
   const currentUserId = String(currentUser.id);
+  const updateReviewStore = useCallback(
+    (store: RecordSourceSelectorProxy) => {
+      const event = store.getRootField("beltEvent");
+      const review = event?.getLinkedRecord("review");
+      if (!review || review.getValue("orderId") !== orderId) {
+        return;
+      }
+
+      const reviewerId = review.getValue("reviewerId");
+      const revieweeId = review.getValue("revieweeId");
+      if (reviewerId !== currentUserId && revieweeId !== currentUserId) {
+        return;
+      }
+
+      prependRecordToRootListIfMissing(store, "myReviews", review);
+    },
+    [currentUserId, orderId],
+  );
+  useBeltEventsSubscription({
+    onNext: handleBeltEvent,
+    updater: updateReviewStore,
+  });
+
   const actions = orderRealtimeNotice
     ? []
     : getAvailableActions(order, currentUser);
@@ -396,11 +430,18 @@ export function BeltOrderDetailPage({
     (review) =>
       review.orderId === order.id && review.reviewerId === currentUserId,
   );
+  const receivedReview = data.myReviews.find(
+    (review) =>
+      review.orderId === order.id && review.revieweeId === currentUserId,
+  );
   const canReview =
     orderRealtimeNotice === null && canReviewOrder(order, currentUserId);
   const shouldShowReviewPanel =
     orderRealtimeNotice === null &&
-    (view === "finish" || canReview || existingReview !== undefined);
+    (view === "finish" ||
+      canReview ||
+      existingReview !== undefined ||
+      receivedReview !== undefined);
   const [reviewRating, setReviewRating] = useState("5");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -485,7 +526,7 @@ export function BeltOrderDetailPage({
       updater: (store) => {
         const review = store.getRootField("createOrderReview");
         if (review) {
-          addOrderToRootList(store, "myReviews", review);
+          prependRecordToRootListIfMissing(store, "myReviews", review);
         }
       },
       onCompleted: () => {
@@ -597,6 +638,18 @@ export function BeltOrderDetailPage({
             </p>
             <h3 className="m-0 text-lg font-semibold">Review walk</h3>
           </div>
+
+          {receivedReview ? (
+            <Alert className="grid gap-2" role="status" tone="info">
+              <span>
+                You received {receivedReview.rating}/5 for this walk. Your
+                current rating is {currentUser.rating.toFixed(1)}.
+              </span>
+              {receivedReview.comment ? (
+                <span>{receivedReview.comment}</span>
+              ) : null}
+            </Alert>
+          ) : null}
 
           {existingReview ? (
             <dl className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">

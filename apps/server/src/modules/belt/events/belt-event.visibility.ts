@@ -28,6 +28,13 @@ export function canReceiveBeltEvent(
     return event.user.id === String(user.id);
   }
 
+  if (event.review) {
+    return (
+      event.review.reviewerId === String(user.id) ||
+      event.review.revieweeId === String(user.id)
+    );
+  }
+
   return false;
 }
 

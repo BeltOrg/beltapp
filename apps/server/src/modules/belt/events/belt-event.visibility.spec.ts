@@ -42,6 +42,28 @@ function buildOrderEvent(overrides: Partial<BeltEvent> = {}): BeltEvent {
   };
 }
 
+function buildReviewEvent(overrides: Partial<BeltEvent> = {}): BeltEvent {
+  return {
+    id: 'event-1',
+    type: BeltEventType.REVIEW_CREATED,
+    occurredAt: new Date('2026-04-28T00:00:00.000Z'),
+    subjectId: '15',
+    user: null,
+    dog: null,
+    order: null,
+    review: {
+      id: '15',
+      orderId: '10',
+      reviewerId: '1',
+      revieweeId: '2',
+      rating: 5,
+      comment: 'Great walk',
+      createdAt: new Date('2026-04-28T00:00:00.000Z'),
+    },
+    ...overrides,
+  };
+}
+
 describe('Belt event visibility', () => {
   it('sends dog events only to the dog owner', () => {
     const event = buildOrderEvent({
@@ -141,5 +163,31 @@ describe('Belt event visibility', () => {
     const otherUser = { id: 2, phone: '+2', roles: [UserRole.OWNER] };
 
     expect(canReceiveBeltEvent(event, otherUser)).toBe(false);
+  });
+
+  it('sends review events only to the reviewer and reviewee', () => {
+    const event = buildReviewEvent();
+
+    expect(
+      canReceiveBeltEvent(event, {
+        id: 1,
+        phone: '+1',
+        roles: [UserRole.OWNER],
+      }),
+    ).toBe(true);
+    expect(
+      canReceiveBeltEvent(event, {
+        id: 2,
+        phone: '+2',
+        roles: [UserRole.WALKER],
+      }),
+    ).toBe(true);
+    expect(
+      canReceiveBeltEvent(event, {
+        id: 3,
+        phone: '+3',
+        roles: [UserRole.WALKER],
+      }),
+    ).toBe(false);
   });
 });

@@ -66,6 +66,15 @@ export function useBeltEventsSubscription({
               cancelledAt
               paidAt
             }
+            review {
+              id
+              orderId
+              reviewerId
+              revieweeId
+              rating
+              comment
+              createdAt
+            }
           }
         }
       `,

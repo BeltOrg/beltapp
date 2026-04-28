@@ -272,7 +272,7 @@ Routes: `/login`, wildcard route
 - [x] Add Belt subscription GraphQL models, event enum, and resolver.
 - [x] Implement server-side subscription filtering for the first order/user
       event slice.
-- [ ] Publish events from user, dog, order, and review mutations after the
+- [x] Publish events from user, dog, order, and review mutations after the
       database write completes.
 - [x] Publish user events after current-user mutations complete.
 - [x] Publish order events after order mutations complete.
@@ -295,7 +295,7 @@ Routes: `/login`, wildcard route
 - [x] Add dashboard order event handling for owner and walker active walks.
 - [x] Add available-order event handling for walker discovery.
 - [x] Add current-order event handling for all order detail views.
-- [ ] Add review event handling for order detail and rating updates.
+- [x] Add review event handling for order detail and rating updates.
 - [x] Reuse the existing realtime connection status API for subscriptions; do
       not
       create new connection state stores.
