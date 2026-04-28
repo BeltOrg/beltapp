@@ -171,9 +171,6 @@ function AppLayout() {
       <Navigation />
       <main className="grid gap-4" key={session?.user.id ?? "anonymous"}>
         <header className="grid gap-1">
-          <p className="m-0 text-xs font-bold uppercase text-muted-foreground">
-            Belt
-          </p>
           <h1 className="m-0 text-3xl font-semibold leading-tight text-foreground">
             {routeTitle}
           </h1>
