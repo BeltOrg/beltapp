@@ -10,6 +10,7 @@ import { DataSource, IsNull, Repository } from 'typeorm';
 import { BeltRealtimeService } from '../belt/events/belt-realtime.service';
 import { BeltEventType } from '../belt/events/belt-event-type.enum';
 import { DogEntity } from '../dogs/entities/dog.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UsersService } from '../users/users.service';
@@ -28,6 +29,7 @@ export class OrderWorkflowService {
     private readonly dataSource: DataSource,
     private readonly usersService: UsersService,
     private readonly beltRealtimeService: BeltRealtimeService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findOwnerOrders(
@@ -130,6 +132,7 @@ export class OrderWorkflowService {
       BeltEventType.ORDER_CREATED,
       order,
     );
+    await this.notificationsService.notifyOrderCreated(order);
 
     return order;
   }
@@ -182,6 +185,7 @@ export class OrderWorkflowService {
       BeltEventType.ORDER_ACCEPTED,
       order,
     );
+    await this.notificationsService.notifyOrderAccepted(order);
 
     return order;
   }
@@ -198,6 +202,7 @@ export class OrderWorkflowService {
       BeltEventType.ORDER_STARTED,
       savedOrder,
     );
+    await this.notificationsService.notifyOrderStarted(savedOrder);
 
     return savedOrder;
   }
@@ -214,6 +219,7 @@ export class OrderWorkflowService {
       BeltEventType.ORDER_FINISHED,
       savedOrder,
     );
+    await this.notificationsService.notifyOrderFinished(savedOrder);
 
     return savedOrder;
   }
@@ -248,6 +254,7 @@ export class OrderWorkflowService {
       BeltEventType.ORDER_CANCELLED,
       savedOrder,
     );
+    await this.notificationsService.notifyOrderCancelled(savedOrder, actorId);
 
     return savedOrder;
   }
@@ -269,6 +276,7 @@ export class OrderWorkflowService {
       BeltEventType.ORDER_PAID,
       savedOrder,
     );
+    await this.notificationsService.notifyOrderPaid(savedOrder);
 
     return savedOrder;
   }

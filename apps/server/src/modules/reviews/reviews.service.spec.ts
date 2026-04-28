@@ -24,6 +24,7 @@ import { OrderEntity } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/enums/order-status.enum';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserEntity } from '../users/entities/user.entity';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { ReviewEntity } from './entities/review.entity';
 import { ReviewsService } from './reviews.service';
 
@@ -104,15 +105,20 @@ describe('ReviewsService', () => {
       publishReviewEvent: jest.fn().mockResolvedValue(undefined),
       publishUserEvent: jest.fn().mockResolvedValue(undefined),
     };
+    const notificationsServiceMock = {
+      notifyReviewCreated: jest.fn().mockResolvedValue(undefined),
+    };
     const service = new ReviewsService(
       reviewsRepositoryMock,
       ordersRepositoryMock,
       usersRepositoryMock,
       beltRealtimeServiceMock,
+      notificationsServiceMock as unknown as NotificationsService,
     );
 
     return {
       beltRealtimeService: beltRealtimeServiceMock,
+      notificationsService: notificationsServiceMock,
       reviewsRepository: reviewsRepositoryMock,
       service,
       usersRepository: usersRepositoryMock,
@@ -120,8 +126,13 @@ describe('ReviewsService', () => {
   }
 
   it('publishes review and reviewee rating events after a review is created', async () => {
-    const { beltRealtimeService, reviewsRepository, service, usersRepository } =
-      createHarness();
+    const {
+      beltRealtimeService,
+      notificationsService,
+      reviewsRepository,
+      service,
+      usersRepository,
+    } = createHarness();
 
     const review = await service.create(10, 1, {
       rating: 5,
@@ -136,6 +147,9 @@ describe('ReviewsService', () => {
     );
     expect(beltRealtimeService.publishReviewEvent).toHaveBeenCalledWith(
       BeltEventType.REVIEW_CREATED,
+      review,
+    );
+    expect(notificationsService.notifyReviewCreated).toHaveBeenCalledWith(
       review,
     );
     expect(beltRealtimeService.publishUserEvent).toHaveBeenCalledWith(

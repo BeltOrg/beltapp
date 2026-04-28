@@ -6,9 +6,11 @@ import { CreateBeltTables20260427180000 } from '../database/migrations/202604271
 import { CreateAuthTables20260428110000 } from '../database/migrations/20260428110000-CreateAuthTables';
 import { RemoveSeededMvpUsers20260428113000 } from '../database/migrations/20260428113000-RemoveSeededMvpUsers';
 import { DropMessageTable20260428104642 } from '../database/migrations/20260428104642-DropMessageTable';
+import { CreateNotifications20260428110948 } from '../database/migrations/20260428110948-CreateNotifications';
 import { AuthAccountEntity } from '../modules/auth/entities/auth-account.entity';
 import { AuthRefreshTokenEntity } from '../modules/auth/entities/auth-refresh-token.entity';
 import { DogEntity } from '../modules/dogs/entities/dog.entity';
+import { NotificationEntity } from '../modules/notifications/entities/notification.entity';
 import { OrderEntity } from '../modules/orders/entities/order.entity';
 import { ReviewEntity } from '../modules/reviews/entities/review.entity';
 import { UserEntity } from '../modules/users/entities/user.entity';
@@ -121,6 +123,7 @@ function getBaseDatabaseOptions(options: {
       DogEntity,
       OrderEntity,
       ReviewEntity,
+      NotificationEntity,
     ],
     synchronize: options.synchronize,
     migrationsRun: options.migrationsRun ?? false,
@@ -136,6 +139,7 @@ function getBaseDatabaseOptions(options: {
             CreateAuthTables20260428110000,
             RemoveSeededMvpUsers20260428113000,
             DropMessageTable20260428104642,
+            CreateNotifications20260428110948,
           ],
         }
       : {};

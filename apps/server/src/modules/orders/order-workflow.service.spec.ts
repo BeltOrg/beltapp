@@ -34,6 +34,7 @@ import type { UsersService } from '../users/users.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import type { BeltRealtimeService } from '../belt/events/belt-realtime.service';
 import { BeltEventType } from '../belt/events/belt-event-type.enum';
+import type { NotificationsService } from '../notifications/notifications.service';
 
 function buildOrder(overrides: Partial<OrderEntity> = {}): OrderEntity {
   return {
@@ -100,6 +101,14 @@ describe('OrderWorkflowService', () => {
     const beltRealtimeServiceMock = {
       publishOrderEvent: jest.fn().mockResolvedValue(undefined),
     };
+    const notificationsServiceMock = {
+      notifyOrderAccepted: jest.fn().mockResolvedValue(undefined),
+      notifyOrderCancelled: jest.fn().mockResolvedValue(undefined),
+      notifyOrderCreated: jest.fn().mockResolvedValue(undefined),
+      notifyOrderFinished: jest.fn().mockResolvedValue(undefined),
+      notifyOrderPaid: jest.fn().mockResolvedValue(undefined),
+      notifyOrderStarted: jest.fn().mockResolvedValue(undefined),
+    };
 
     const service = new OrderWorkflowService(
       ordersRepositoryMock as unknown as Repository<OrderEntity>,
@@ -107,6 +116,7 @@ describe('OrderWorkflowService', () => {
       dataSourceMock as unknown as DataSource,
       usersServiceMock as unknown as UsersService,
       beltRealtimeServiceMock as unknown as BeltRealtimeService,
+      notificationsServiceMock as unknown as NotificationsService,
     );
 
     return {
@@ -116,6 +126,7 @@ describe('OrderWorkflowService', () => {
       service,
       usersService: usersServiceMock,
       beltRealtimeService: beltRealtimeServiceMock,
+      notificationsService: notificationsServiceMock,
     };
   }
 
@@ -125,11 +136,16 @@ describe('OrderWorkflowService', () => {
       walkerId: 2,
       acceptedAt: new Date('2026-04-27T10:05:00.000Z'),
     });
-    const { beltRealtimeService, ordersRepository, queryBuilder, service } =
-      createHarness({
-        affected: 1,
-        order: acceptedOrder,
-      });
+    const {
+      beltRealtimeService,
+      notificationsService,
+      ordersRepository,
+      queryBuilder,
+      service,
+    } = createHarness({
+      affected: 1,
+      order: acceptedOrder,
+    });
 
     await expect(service.accept(10, 2)).resolves.toMatchObject({
       status: OrderStatus.ACCEPTED,
@@ -144,6 +160,9 @@ describe('OrderWorkflowService', () => {
     expect(ordersRepository.findOneBy).toHaveBeenCalledWith({ id: 10 });
     expect(beltRealtimeService.publishOrderEvent).toHaveBeenCalledWith(
       BeltEventType.ORDER_ACCEPTED,
+      acceptedOrder,
+    );
+    expect(notificationsService.notifyOrderAccepted).toHaveBeenCalledWith(
       acceptedOrder,
     );
   });

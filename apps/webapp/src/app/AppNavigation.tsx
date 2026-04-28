@@ -5,6 +5,7 @@ import {
   userHasAnyRole,
 } from "../shared/auth/session";
 import { cn } from "../shared/ui";
+import { NotificationsBell } from "../features/notifications/NotificationsBell";
 
 type PrimaryLink = {
   to: string;
@@ -66,13 +67,16 @@ export function Navigation() {
         ))}
       </div>
       {session ? (
-        <button
-          type="button"
-          className="rounded-ui border border-border bg-surface px-3 py-2 text-left text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-ring hover:bg-muted"
-          onClick={() => void navigate("/profile")}
-        >
-          {session.user.phone}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationsBell />
+          <button
+            type="button"
+            className="rounded-ui border border-border bg-surface px-3 py-2 text-left text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-ring hover:bg-muted"
+            onClick={() => void navigate("/profile")}
+          >
+            {session.user.phone}
+          </button>
+        </div>
       ) : null}
     </nav>
   );

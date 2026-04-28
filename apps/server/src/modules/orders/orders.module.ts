@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { BeltRealtimeModule } from '../belt/events/belt-realtime.module';
 import { DogEntity } from '../dogs/entities/dog.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
 import { OrderEntity } from './entities/order.entity';
 import { OrdersResolver } from './orders.resolver';
@@ -15,6 +16,7 @@ export const ORDERS_GRAPHQL_RESOLVERS = [OrdersResolver] as const;
     TypeOrmModule.forFeature([OrderEntity, DogEntity]),
     AuthModule,
     BeltRealtimeModule,
+    NotificationsModule,
     UsersModule,
   ],
   providers: [OrderWorkflowService, ...ORDERS_GRAPHQL_RESOLVERS],

@@ -105,12 +105,37 @@ type Mutation {
   finishOrder(id: ID!): Order!
   login(input: LoginInput!): AuthPayload!
   logout(input: LogoutInput!): Boolean!
+  markAllNotificationsRead: Boolean!
+  markNotificationRead(id: ID!): Notification!
   markOrderPaid(id: ID!): Order!
   refreshSession(input: RefreshSessionInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
   startOrder(id: ID!): Order!
   updateDog(id: ID!, input: UpdateDogInput!): Dog!
   updateMyRoles(input: UpdateMyRolesInput!): User!
+}
+
+type Notification {
+  actionUrl: String
+  actorId: ID
+  body: String!
+  createdAt: Date!
+  id: ID!
+  orderId: ID
+  readAt: Date
+  recipientId: ID!
+  title: String!
+  type: NotificationType!
+}
+
+enum NotificationType {
+  AVAILABLE_WALK_CREATED
+  ORDER_ACCEPTED
+  ORDER_CANCELLED
+  ORDER_FINISHED
+  ORDER_PAID
+  ORDER_STARTED
+  REVIEW_CREATED
 }
 
 type Order {
@@ -149,8 +174,10 @@ type Query {
   dog(id: ID!): Dog!
   me: User!
   myDogs: [Dog!]!
+  myNotifications(limit: Int): [Notification!]!
   myOwnerOrders(statuses: [OrderStatus!]): [Order!]!
   myReviews: [Review!]!
+  myUnreadNotificationCount: Int!
   myWalkerOrders(statuses: [OrderStatus!]): [Order!]!
   order(id: ID!): Order!
 }
@@ -177,6 +204,7 @@ type Review {
 
 type Subscription {
   beltEvent: BeltEvent!
+  notificationCreated: Notification!
 }
 
 input UpdateDogInput {

@@ -317,7 +317,8 @@ Routes: `/login`, wildcard route
 - [x] Manual smoke: one participant reviews and the other participant sees the
       review/rating update live.
 - [ ] Reconnect smoke: terminate or restart the websocket connection and verify
-      active subscriptions recover on Cloud Run-style disconnects.
+      active `beltEvent` and `notificationCreated` subscriptions recover on
+      Cloud Run-style disconnects.
 
 ## Open Decisions
 

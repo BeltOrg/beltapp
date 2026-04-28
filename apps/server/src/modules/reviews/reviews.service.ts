@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { BeltEventType } from '../belt/events/belt-event-type.enum';
 import { BeltRealtimeService } from '../belt/events/belt-realtime.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { OrderEntity } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/enums/order-status.enum';
 import { UserEntity } from '../users/entities/user.entity';
@@ -56,6 +57,7 @@ export class ReviewsService {
     private readonly usersRepository: UsersRepository,
     @Inject(BeltRealtimeService)
     private readonly beltRealtimeService: ReviewEventPublisher,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findMine(userId: number): Promise<ReviewEntity[]> {
@@ -116,6 +118,7 @@ export class ReviewsService {
       BeltEventType.REVIEW_CREATED,
       review,
     );
+    await this.notificationsService.notifyReviewCreated(review);
     if (updatedReviewee) {
       await this.beltRealtimeService.publishUserEvent(
         BeltEventType.USER_UPDATED,
