@@ -1,13 +1,22 @@
+import { useCallback, useState } from "react";
 import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltDogDetailPageQuery } from "./__generated__/BeltDogDetailPageQuery.graphql";
-import { Badge, Button, Surface } from "../../../shared/ui";
+import {
+  isDogDeleteEventForId,
+} from "../realtime/dogEvents";
+import {
+  type BeltEventsSubscriptionResponse,
+  useBeltEventsSubscription,
+} from "../realtime/useBeltEventsSubscription";
+import { Alert, Badge, Button, Surface } from "../../../shared/ui";
 
 type BeltDogDetailPageProps = {
   dogId: string;
 };
 
 export function BeltDogDetailPage({ dogId }: BeltDogDetailPageProps) {
+  const [wasDeleted, setWasDeleted] = useState(false);
   const data = useLazyLoadQuery<BeltDogDetailPageQuery>(
     graphql`
       query BeltDogDetailPageQuery($id: ID!) {
@@ -23,6 +32,29 @@ export function BeltDogDetailPage({ dogId }: BeltDogDetailPageProps) {
     { id: dogId },
     { fetchPolicy: "store-and-network" },
   );
+  const handleBeltEvent = useCallback(
+    (response: BeltEventsSubscriptionResponse | null | undefined) => {
+      if (isDogDeleteEventForId(response, dogId)) {
+        setWasDeleted(true);
+      }
+    },
+    [dogId],
+  );
+
+  useBeltEventsSubscription({ onNext: handleBeltEvent });
+
+  if (wasDeleted) {
+    return (
+      <Surface framed className="max-w-xl">
+        <Alert role="status" tone="info">
+          This dog profile was deleted in another session.
+        </Alert>
+        <Button asChild>
+          <Link to="/dogs">Back to dogs</Link>
+        </Button>
+      </Surface>
+    );
+  }
 
   return (
     <Surface>

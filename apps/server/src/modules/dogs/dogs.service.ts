@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { BeltEventType } from '../belt/events/belt-event-type.enum';
+import { BeltRealtimeService } from '../belt/events/belt-realtime.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UsersService } from '../users/users.service';
 import { CreateDogInput } from './dto/create-dog.input';
@@ -17,6 +19,7 @@ export class DogsService {
     @InjectRepository(DogEntity)
     private readonly dogsRepository: Repository<DogEntity>,
     private readonly usersService: UsersService,
+    private readonly beltRealtimeService: BeltRealtimeService,
   ) {}
 
   async findMine(ownerId: number): Promise<DogEntity[]> {
@@ -54,7 +57,7 @@ export class DogsService {
       });
     }
 
-    return this.dogsRepository.save(
+    const dog = await this.dogsRepository.save(
       this.dogsRepository.create({
         ownerId,
         name: input.name,
@@ -63,6 +66,13 @@ export class DogsService {
         notes: input.notes ?? null,
       }),
     );
+
+    await this.beltRealtimeService.publishDogEvent(
+      BeltEventType.DOG_CREATED,
+      dog,
+    );
+
+    return dog;
   }
 
   async update(
@@ -88,12 +98,27 @@ export class DogsService {
       dog.notes = input.notes;
     }
 
-    return this.dogsRepository.save(dog);
+    const savedDog = await this.dogsRepository.save(dog);
+    await this.beltRealtimeService.publishDogEvent(
+      BeltEventType.DOG_UPDATED,
+      savedDog,
+    );
+
+    return savedDog;
   }
 
   async delete(id: number, ownerId: number): Promise<boolean> {
-    await this.requireOwnedDog(id, ownerId);
+    const dog = await this.requireOwnedDog(id, ownerId);
     const result = await this.dogsRepository.delete({ id, ownerId });
-    return (result.affected ?? 0) > 0;
+    const wasDeleted = (result.affected ?? 0) > 0;
+
+    if (wasDeleted) {
+      await this.beltRealtimeService.publishDogEvent(
+        BeltEventType.DOG_DELETED,
+        dog,
+      );
+    }
+
+    return wasDeleted;
   }
 }

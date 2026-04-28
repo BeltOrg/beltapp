@@ -2,6 +2,8 @@ import { Link } from "react-router";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import type { BeltDogsPageQuery } from "./__generated__/BeltDogsPageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
+import { applyMyDogsEvent } from "../realtime/dogEvents";
+import { useBeltEventsSubscription } from "../realtime/useBeltEventsSubscription";
 import { Badge, Button, Card, Surface } from "../../../shared/ui";
 
 export function BeltDogsPage() {
@@ -20,6 +22,7 @@ export function BeltDogsPage() {
     {},
     { fetchPolicy: "store-and-network" },
   );
+  useBeltEventsSubscription({ updater: applyMyDogsEvent });
 
   return (
     <Surface>

@@ -1,4 +1,5 @@
 import { UserRole } from '../../users/enums/user-role.enum';
+import { DogSize } from '../../dogs/enums/dog-size.enum';
 import { OrderStatus } from '../../orders/enums/order-status.enum';
 import { BeltEvent } from './belt-event.model';
 import { BeltEventType } from './belt-event-type.enum';
@@ -42,6 +43,39 @@ function buildOrderEvent(overrides: Partial<BeltEvent> = {}): BeltEvent {
 }
 
 describe('Belt event visibility', () => {
+  it('sends dog events only to the dog owner', () => {
+    const event = buildOrderEvent({
+      order: null,
+      type: BeltEventType.DOG_UPDATED,
+      subjectId: '5',
+      dog: {
+        id: '5',
+        ownerId: '1',
+        name: 'Milo',
+        size: DogSize.MEDIUM,
+        behaviorTags: [],
+        notes: null,
+        createdAt: new Date('2026-04-27T10:00:00.000Z'),
+        updatedAt: new Date('2026-04-27T10:00:00.000Z'),
+      },
+    });
+
+    expect(
+      canReceiveBeltEvent(event, {
+        id: 1,
+        phone: '+1',
+        roles: [UserRole.OWNER],
+      }),
+    ).toBe(true);
+    expect(
+      canReceiveBeltEvent(event, {
+        id: 2,
+        phone: '+2',
+        roles: [UserRole.OWNER],
+      }),
+    ).toBe(false);
+  });
+
   it('lets walkers see newly available order details', () => {
     const event = buildOrderEvent();
     const walker = { id: 2, phone: '+1', roles: [UserRole.WALKER] };

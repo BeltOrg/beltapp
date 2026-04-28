@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { graphql, useLazyLoadQuery, useMutation } from "react-relay";
 import type {
@@ -9,7 +9,20 @@ import type {
 import type { BeltDogEditorPageDeleteDogMutation } from "./__generated__/BeltDogEditorPageDeleteDogMutation.graphql";
 import type { BeltDogEditorPageEditQuery } from "./__generated__/BeltDogEditorPageEditQuery.graphql";
 import type { BeltDogEditorPageUpdateDogMutation } from "./__generated__/BeltDogEditorPageUpdateDogMutation.graphql";
+import {
+  applyMyDogsEvent,
+  isDogDeleteEventForId,
+} from "../realtime/dogEvents";
+import {
+  type BeltEventsSubscriptionResponse,
+  useBeltEventsSubscription,
+} from "../realtime/useBeltEventsSubscription";
 import { getRelayErrorMessage } from "../../../shared/relay/errors";
+import {
+  prependRecordToRootListIfMissing,
+  removeRecordFromRootList,
+  replaceRecordInRootList,
+} from "../../../shared/relay/store";
 import {
   Alert,
   Button,
@@ -197,13 +210,7 @@ function CreateDogPage() {
           return;
         }
 
-        const root = store.getRoot();
-        const currentDogs = root.getLinkedRecords("myDogs") ?? [];
-        if (currentDogs.some((dog) => dog.getDataID() === newDog.getDataID())) {
-          return;
-        }
-
-        root.setLinkedRecords([newDog, ...currentDogs], "myDogs");
+        prependRecordToRootListIfMissing(store, "myDogs", newDog);
       },
       onCompleted: ({ createDog }) => {
         void navigate(`/dogs/${createDog.id}`);
@@ -230,6 +237,7 @@ function CreateDogPage() {
 function EditDogPage({ dogId }: { dogId: string }) {
   const navigate = useNavigate();
   const [formError, setFormError] = useState<string | null>(null);
+  const [wasDeleted, setWasDeleted] = useState(false);
   const data = useLazyLoadQuery<BeltDogEditorPageEditQuery>(
     graphql`
       query BeltDogEditorPageEditQuery($id: ID!) {
@@ -245,6 +253,19 @@ function EditDogPage({ dogId }: { dogId: string }) {
     { id: dogId },
     { fetchPolicy: "store-and-network" },
   );
+  const handleBeltEvent = useCallback(
+    (response: BeltEventsSubscriptionResponse | null | undefined) => {
+      if (isDogDeleteEventForId(response, dogId)) {
+        setWasDeleted(true);
+        setFormError("This dog profile was deleted in another session.");
+      }
+    },
+    [dogId],
+  );
+  useBeltEventsSubscription({
+    onNext: handleBeltEvent,
+    updater: applyMyDogsEvent,
+  });
   const [commitUpdateDog, isUpdating] =
     useMutation<BeltDogEditorPageUpdateDogMutation>(graphql`
       mutation BeltDogEditorPageUpdateDogMutation(
@@ -278,6 +299,12 @@ function EditDogPage({ dogId }: { dogId: string }) {
     setFormError(null);
     commitUpdateDog({
       variables: { id: dogId, input: values },
+      updater: (store) => {
+        const updatedDog = store.getRootField("updateDog");
+        if (updatedDog) {
+          replaceRecordInRootList(store, "myDogs", updatedDog);
+        }
+      },
       onCompleted: ({ updateDog }) => {
         void navigate(`/dogs/${updateDog.id}`);
       },
@@ -297,16 +324,7 @@ function EditDogPage({ dogId }: { dogId: string }) {
     commitDeleteDog({
       variables: { id: dogId },
       updater: (store) => {
-        const root = store.getRoot();
-        const currentDogs = root.getLinkedRecords("myDogs");
-        if (!currentDogs) {
-          return;
-        }
-
-        root.setLinkedRecords(
-          currentDogs.filter((dog) => dog.getDataID() !== dogId),
-          "myDogs",
-        );
+        removeRecordFromRootList(store, "myDogs", dogId);
       },
       onCompleted: () => {
         void navigate("/dogs");
@@ -321,17 +339,27 @@ function EditDogPage({ dogId }: { dogId: string }) {
     <Surface framed className="max-w-xl">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <h2 className="m-0 text-xl font-semibold">Edit dog</h2>
-        <Button variant="ghost" onClick={handleDelete} disabled={isSaving}>
+        <Button
+          variant="ghost"
+          onClick={handleDelete}
+          disabled={isSaving || wasDeleted}
+        >
           {isDeleting ? "Deleting..." : "Delete"}
         </Button>
       </div>
       {formError ? <Alert>{formError}</Alert> : null}
-      <DogForm
-        defaultValues={data.dog}
-        isSaving={isSaving}
-        onSubmit={handleSubmit}
-        submitLabel="Save dog"
-      />
+      {wasDeleted ? (
+        <Button onClick={() => void navigate("/dogs", { replace: true })}>
+          Back to dogs
+        </Button>
+      ) : (
+        <DogForm
+          defaultValues={data.dog}
+          isSaving={isSaving}
+          onSubmit={handleSubmit}
+          submitLabel="Save dog"
+        />
+      )}
     </Surface>
   );
 }

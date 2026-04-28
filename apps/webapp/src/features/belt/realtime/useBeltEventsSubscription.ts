@@ -29,6 +29,16 @@ export function useBeltEventsSubscription({
               id
               type
               subjectId
+              dog {
+                id
+                ownerId
+                name
+                size
+                behaviorTags
+                notes
+                createdAt
+                updatedAt
+              }
               order {
                 id
                 ownerId

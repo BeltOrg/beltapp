@@ -4,6 +4,8 @@ import { graphql, useLazyLoadQuery, useMutation } from "react-relay";
 import type { BeltOrderEditorPageCreateOrderMutation } from "./__generated__/BeltOrderEditorPageCreateOrderMutation.graphql";
 import type { BeltOrderEditorPageQuery } from "./__generated__/BeltOrderEditorPageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
+import { applyMyDogsEvent } from "../realtime/dogEvents";
+import { useBeltEventsSubscription } from "../realtime/useBeltEventsSubscription";
 import { getRelayErrorMessage } from "../../../shared/relay/errors";
 import {
   Alert,
@@ -132,6 +134,7 @@ export function BeltOrderEditorPage() {
     {},
     { fetchPolicy: "store-and-network" },
   );
+  useBeltEventsSubscription({ updater: applyMyDogsEvent });
   const [commitCreateOrder, isCreating] =
     useMutation<BeltOrderEditorPageCreateOrderMutation>(graphql`
       mutation BeltOrderEditorPageCreateOrderMutation(

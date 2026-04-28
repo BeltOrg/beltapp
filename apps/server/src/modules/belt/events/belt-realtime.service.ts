@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { logStructuredEvent } from '../../../logging/structured-log';
+import { DogEntity } from '../../dogs/entities/dog.entity';
+import { mapDog } from '../../dogs/dogs.mapper';
 import { OrderEntity } from '../../orders/entities/order.entity';
 import { mapOrder } from '../../orders/orders.mapper';
 import { RealtimePubSubService } from '../../realtime/realtime-pubsub.service';
@@ -31,6 +33,19 @@ export class BeltRealtimeService {
       user: null,
       dog: null,
       order: mapOrder(order),
+      review: null,
+    });
+  }
+
+  async publishDogEvent(type: BeltEventType, dog: DogEntity): Promise<void> {
+    await this.safePublish({
+      id: randomUUID(),
+      type,
+      occurredAt: new Date(),
+      subjectId: String(dog.id),
+      user: null,
+      dog: mapDog(dog),
+      order: null,
       review: null,
     });
   }

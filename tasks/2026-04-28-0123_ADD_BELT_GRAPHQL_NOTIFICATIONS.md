@@ -275,6 +275,7 @@ Routes: `/login`, wildcard route
 - [ ] Publish events from user, dog, order, and review mutations after the
       database write completes.
 - [x] Publish order events after order mutations complete.
+- [x] Publish dog events after dog mutations complete.
 - [x] Ensure order events are emitted after atomic state transitions, especially
       competing `acceptOrder` calls.
 - [x] Add tests for event publishing and authorization filtering.
@@ -288,7 +289,7 @@ Routes: `/login`, wildcard route
       remove operations.
 - [ ] Add a current-user subscription at the app/session layer for `me` and
       auth-session cache updates.
-- [ ] Add owner dog event handling for dashboard, dog list, dog detail, dog
+- [x] Add owner dog event handling for dashboard, dog list, dog detail, dog
       editor, and create-walk selector flows.
 - [x] Add dashboard order event handling for owner and walker active walks.
 - [x] Add available-order event handling for walker discovery.

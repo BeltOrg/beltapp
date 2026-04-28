@@ -5,6 +5,7 @@ import type { RecordSourceSelectorProxy } from "relay-runtime";
 import type { BeltDashboardPageQuery } from "./__generated__/BeltDashboardPageQuery.graphql";
 import { BeltEmptyState } from "../components/BeltEmptyState";
 import { BeltStatusBadge } from "../components/BeltStatusBadge";
+import { applyMyDogsEvent } from "../realtime/dogEvents";
 import { useBeltEventsSubscription } from "../realtime/useBeltEventsSubscription";
 import {
   prependRecordToRootListIfMissing,
@@ -49,6 +50,8 @@ export function BeltDashboardPage() {
   const currentUserId = data.me.id;
   const updateDashboardOrders = useCallback(
     (store: RecordSourceSelectorProxy) => {
+      applyMyDogsEvent(store);
+
       const event = store.getRootField("beltEvent");
       const order = event?.getLinkedRecord("order");
       if (!event || !order) {

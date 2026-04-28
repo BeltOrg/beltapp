@@ -16,6 +16,10 @@ export function canReceiveBeltEvent(
   event: BeltEvent,
   user: AuthenticatedRequestUser,
 ): boolean {
+  if (event.dog) {
+    return event.dog.ownerId === String(user.id);
+  }
+
   if (event.order) {
     return canReceiveOrderEvent(event, user);
   }

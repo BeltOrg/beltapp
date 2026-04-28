@@ -1,5 +1,12 @@
 import type { RecordProxy, RecordSourceSelectorProxy } from "relay-runtime";
 
+function getStableRecordId(record: RecordProxy): string {
+  const id = record.getValue("id");
+  return typeof id === "string" || typeof id === "number"
+    ? String(id)
+    : record.getDataID();
+}
+
 export function prependRecordToRootListIfMissing(
   store: RecordSourceSelectorProxy,
   listFieldName: string,
@@ -7,9 +14,9 @@ export function prependRecordToRootListIfMissing(
 ): void {
   const root = store.getRoot();
   const existingRecords = root.getLinkedRecords(listFieldName) ?? [];
-  const recordId = record.getDataID();
+  const recordId = getStableRecordId(record);
 
-  if (existingRecords.some((item) => item.getDataID() === recordId)) {
+  if (existingRecords.some((item) => getStableRecordId(item) === recordId)) {
     return;
   }
 
@@ -28,10 +35,10 @@ export function replaceRecordInRootList(
     return;
   }
 
-  const recordId = record.getDataID();
+  const recordId = getStableRecordId(record);
   root.setLinkedRecords(
     existingRecords.map((item) =>
-      item.getDataID() === recordId ? record : item,
+      getStableRecordId(item) === recordId ? record : item,
     ),
     listFieldName,
   );
@@ -50,7 +57,7 @@ export function removeRecordFromRootList(
   }
 
   root.setLinkedRecords(
-    existingRecords.filter((record) => record.getDataID() !== recordId),
+    existingRecords.filter((record) => getStableRecordId(record) !== recordId),
     listFieldName,
   );
 }
