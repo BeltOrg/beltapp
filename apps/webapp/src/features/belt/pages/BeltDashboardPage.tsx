@@ -442,7 +442,7 @@ export function BeltDashboardPage() {
       : undefined;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
       <Surface
         framed
         className="lg:col-span-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
