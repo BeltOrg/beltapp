@@ -16,10 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Rush Delivery validation
-        uses: BootstrapLaboratory/rush-delivery@v0.3.4
+        uses: BootstrapLaboratory/rush-delivery@v0.4.1
         with:
           entrypoint: validate
           toolchain-image-provider: github
-          toolchain-image-policy: pull-or-build
           rush-cache-provider: github
-          rush-cache-policy: pull-or-build
